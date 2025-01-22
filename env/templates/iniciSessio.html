@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inici de sessió</title>
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    
+    <h2>Inicia sessió</h2>
+    <form method="POST">
+        <input type="text" name="username" placeholder="Nom d'usuari" required>
+        <input type="password" name="password" placeholder="Contrasenya" required>
+        <button type="submit">Iniciar sessió</button>
+    </form>
+    <a href="{{ url_for('register') }}">Encara no tens compte? Registra't aquí</a>
+</body>
+</html>
