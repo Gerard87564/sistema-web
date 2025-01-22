@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Panel de Administración</h1>
+
+    <p>Bienvenido, <strong>{{ current_user.username }}</strong>.</p>
+
+    <h2>Lista de Usuarios</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre de Usuario</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>
+                    {% if user.is_admin %}
+                        Administrador
+                    {% else %}
+                        Usuario
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="POST" 
+                          onsubmit="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
+                        <button type="submit">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+    <a href="{{ url_for('dashboard') }}">Volver al Panel de Usuario</a>
+    <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+
+</body>
+</html>
