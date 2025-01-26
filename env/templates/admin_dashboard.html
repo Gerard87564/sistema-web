@@ -5,6 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        color: #343a40;
+    }
+
+    p {
+        font-size: 18px;
+        color: #555;
+    }
+
+    h2 {
+        color: #007bff;
+        margin-top: 20px;
+    }
+
+    table {
+        width: 80%;
+        margin: 20px auto;
+        border-collapse: collapse;
+        background: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    table, th, td {
+        border: 1px solid #dee2e6;
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: center;
+    }
+
+    th {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    button {
+        background-color: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    button:hover {
+        background-color: #c82333;
+    }
+
+    a {
+        display: inline-block;
+        margin: 10px;
+        color: #007bff;
+        text-decoration: none;
+        font-size: 16px;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    </style>
 </head>
 <body>
     <h1>Panel de Administración</h1>
