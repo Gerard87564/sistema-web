@@ -32,7 +32,7 @@
         }
 
         nav a {
-            color: #00bcd4;
+            color: #ff0000;
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
@@ -46,7 +46,7 @@
         #hero {
             text-align: center;
             padding: 100px 20px;
-            background: linear-gradient(to right, #00bcd4, #1e1e1e);
+            background: linear-gradient(to right, #ff0000, #1e1e1e);
         }
 
         #hero h2 {
@@ -60,7 +60,7 @@
         .btn {
             display: inline-block;
             padding: 15px 30px;
-            background-color: #00bcd4;
+            background-color: #ff0000;
             color: #121212;
             text-decoration: none;
             border-radius: 5px;
@@ -69,7 +69,7 @@
         }
 
         .btn:hover {
-            background-color: #ff9800;
+            background-color: #ff0000;
         }
 
         section {
@@ -96,13 +96,13 @@
         }
 
         #leaderboard th, #leaderboard td {
-            border: 1px solid #00bcd4;
+            border: 1px solid #ff0000;
             padding: 15px;
             text-align: center;
         }
 
         #leaderboard th {
-            background-color: #00bcd4;
+            background-color: #ff0000;
             color: #121212;
         }
 
@@ -119,14 +119,14 @@
         <h1>Redzone CTF</h1>
         <nav>
             <ul>
-                <li><a href="{{ url_for('home') }}">Inicio</a></li>
-                <li><a href="{{ url_for('dashboard') }}">Desafíos</a></li>
-                <li><a href="{{ url_for('admin_dashboard') }}">Clasificación</a></li>
+                <li><a href="{{ url_for('home') }}">Inici</a></li>
+                <li><a href="{{ url_for('dashboard') }}">Reptes</a></li>
+                <li><a href="{{ url_for('admin_dashboard') }}">Clasificació</a></li>
                 {% if current_user.is_authenticated %}
-                    <li><a href="{{ url_for('logout') }}">Cerrar Sesión</a></li>
+                    <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
                 {% else %}
-                    <li><a href="{{ url_for('login') }}">Iniciar Sesión</a></li>
-                    <li><a href="{{ url_for('register') }}">Registro</a></li>
+                    <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
+                    <li><a href="{{ url_for('register') }}">Registre</a></li>
                 {% endif %}
             </ul>
         </nav>
