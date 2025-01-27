@@ -28,7 +28,7 @@ def load_user(user_id):
 
 @app.route('/')
 def home():
-    return "Benvingut al sistema web!"
+    return render_template('web.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
