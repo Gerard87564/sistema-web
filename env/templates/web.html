@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redzone CTF</title>
+    <link rel="shortcut icon" href="./IMG/RedZone CTF logo, minimalista y chulo.png">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -117,18 +120,19 @@
 <body>
     <header>
         <h1>Redzone CTF</h1>
-        <nav>
+        <nav class="col-12 col-lg-12 col-dm-12 col-sm-12">
             <ul>
                 <li><a href="{{ url_for('home') }}">Inici</a></li>
                 <li><a href="{{ url_for('dashboard') }}">Reptes</a></li>
                 <li><a href="{{ url_for('admin_dashboard') }}">Clasificació</a></li>
-                {% if current_user.is_authenticated %}
-                    <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
-                {% else %}
-                    <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
-                    <li><a href="{{ url_for('register') }}">Registre</a></li>
-                {% endif %}
+                <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
+                <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
+                <li><a href="{{ url_for('register') }}">Registre</a></li>
             </ul>
+            
+            <div id="hamburger-menu">
+                <div id="bar"></div>
+            </div> 
         </nav>
     </header>
 
