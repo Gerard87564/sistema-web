@@ -62,17 +62,22 @@ def login():
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
             flash("Sessió iniciada correctament!", "success")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('web'))
         else:
             flash("Credencials incorrectes!", "danger")
             return redirect(url_for('login'))
 
     return render_template('iniciSessio.html')
 
-@app.route('/dashboard')
+@app.route('/web')
 @login_required
-def dashboard():
-    return f"Hola, {current_user.username}! Benvingut al panell."
+def web():
+    return render_template('web.html')
+
+@app.route('/reptes')
+@login_required
+def reptes():
+    return render_template('reptes.html')
 
 @app.route('/logout')
 @login_required
@@ -86,7 +91,7 @@ def logout():
 def admin_delete_user(user_id):
     if not current_user.is_admin:
         flash('No tienes permisos para eliminar usuarios.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('web'))
 
     user_to_delete = User.query.get_or_404(user_id)
 
@@ -105,7 +110,7 @@ def admin_delete_user(user_id):
 def admin_dashboard():
     if not current_user.is_admin:
         flash('No tienes permisos para acceder a esta página.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('web'))
 
     users = User.query.all()
     return render_template('admin_dashboard.html', users=users)
