@@ -75,9 +75,12 @@ def web():
     return render_template('web.html')
 
 @app.route('/reptes')
-@login_required
 def reptes():
     return render_template('reptes.html')
+
+@app.route('/sqli')
+def sqli():
+    return render_template('sqli.html')
 
 @app.route('/logout')
 @login_required

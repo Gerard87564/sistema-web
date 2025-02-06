@@ -31,6 +31,10 @@
             bottom: 1em;
         }
 
+        #challenges ul li {
+            text-decoration: none;
+        }
+
         nav ul li {
             display: inline;
             margin: 0 20px;
@@ -254,7 +258,7 @@
     <section id="challenges">
         <h2>Tots els reptes</h2>
         <ul>
-            <li>SQL injection</li>
+            <li><a href="{{ url_for('sqli') }}">SQL injection</a></li>
             <li>Criptografía</li>
             <li>Forense Digital</li>
             <li>Explotació Web</li>
