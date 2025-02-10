@@ -91,6 +91,11 @@
             padding: 0;
         }
 
+        #challenges ul li a {
+            text-decoration: none;
+            color: white;
+        }
+
         #challenges li {
             background: #1e1e1e;
             margin: 10px;
@@ -259,11 +264,11 @@
         <h2>Tots els reptes</h2>
         <ul>
             <li><a href="{{ url_for('sqli') }}">SQL injection</a></li>
-            <li>Criptografía</li>
-            <li>Forense Digital</li>
-            <li>Explotació Web</li>
-            <li>Programació</li>
-            <li>Steganografía</li>
+            <li><a href="{{ url_for('criptografia') }}">Criptografía</a></li>
+            <li><a href="{{ url_for('fdigital') }}">Forense Digital</a></li>
+            <li><a href="{{ url_for('exweb') }}">Explotació Web</a></li>
+            <li><a href="{{ url_for('programacio') }}">Programació</a></li>
+            <li><a href="{{ url_for('steganografia') }}">Steganografía</a></li>
             <li>Recon</li>
         </ul>
     </section>

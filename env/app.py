@@ -82,6 +82,26 @@ def reptes():
 def sqli():
     return render_template('sqli.html')
 
+@app.route('/criptografia')
+def criptografia():
+    return render_template('criptografia.html')
+
+@app.route('/fdigital')
+def fdigital():
+    return render_template('fdigital.html')
+
+@app.route('/exweb')
+def exweb():
+    return render_template('exweb.html')
+
+@app.route('/programacio')
+def programacio():
+    return render_template('programacio.html')
+
+@app.route('/steganografia')
+def steganografia():
+    return render_template('steganografia.html')
+
 @app.route('/logout')
 @login_required
 def logout():
