@@ -82,6 +82,18 @@
             text-align: center;
         }
 
+        #challenges ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #challenges li {
+            background: #1e1e1e;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
         #leaderboard table {
             width: 80%;
             margin: 0 auto;
@@ -239,18 +251,7 @@
         </nav>
     </header>
 
-    <section id="challenges">
-        <h2>Tots els reptes</h2>
-        <ul>
-            <li><a href="{{ url_for('sqli') }}">SQL injection</a></li>
-            <li><a href="{{ url_for('criptografia') }}">Criptografía</a></li>
-            <li><a href="{{ url_for('fdigital') }}">Forense Digital</a></li>
-            <li><a href="{{ url_for('exweb') }}">Explotació Web</a></li>
-            <li><a href="{{ url_for('programacio') }}">Programació</a></li>
-            <li><a href="{{ url_for('steganografia') }}">Steganografía</a></li>
-            <li>Recon</li>
-        </ul>
-    </section>
+    
 
     <section id="leaderboard">
         <h2>Clasificación</h2>
