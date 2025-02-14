@@ -90,10 +90,6 @@ def criptografia():
 def fdigital():
     return render_template('fdigital.html')
 
-@app.route('/exweb')
-def exweb():
-    return render_template('exweb.html')
-
 @app.route('/programacio')
 def programacio():
     return render_template('programacio.html')
