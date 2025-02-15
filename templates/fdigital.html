@@ -6,7 +6,22 @@
     <title>Redzone CTF</title>
     <link rel="shortcut icon" href="./IMG/Remove-bg.ai_1738613576296.png">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="./JS/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menu= document.getElementById('menu');
+            const htopnav = document.getElementById('htopnav');
+            const icon= document.getElementById('bar');
+
+            menu.addEventListener("click", function () {
+                icon.classList.toggle('animate');
+                htopnav.classList.toggle('visible');
+            }); 
+
+            icon.addEventListener("click", function () {
+                icon.classList.toggle('visible');
+            });
+        });
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
