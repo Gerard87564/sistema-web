@@ -98,9 +98,9 @@ def programacio():
 def steganografia():
     return render_template('steganografia.html')
 
-@app.route('/sqli-game')
+@app.route('/sqligame')
 def sqligame():
-    return render_template('sqli-game.html')
+    return render_template('sqligame.html')
 
 @app.route('/logout')
 @login_required
