@@ -4,8 +4,8 @@ if ($conn_db->connect_error) {
     die("Conexió a la base de dades fallida: " . $conn_db->connect_error);
 }
 
-$ftp_server = "ftp://<dirección_ip_de_ubuntu>";
-$ftp_user_name = "usuario";  
+$ftp_server = "ftp://10.0.4.50";
+$ftp_user_name = "usuario";
 $ftp_user_pass = "contraseña";  
 
 $conn_id = ftp_connect($ftp_server) or die("No se pudo conectar a $ftp_server");
