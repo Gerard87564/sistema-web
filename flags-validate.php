@@ -4,7 +4,7 @@ if ($conn_db->connect_error) {
     die("Conexió a la base de dades fallida: " . $conn_db->connect_error);
 }
 
-$ftp_server = "ftp://10.0.4.50";
+$ftp_server = "ftp://10.0.4.52";
 $ftp_user_name = "usuario";
 $ftp_user_pass = "contraseña";  
 
