@@ -109,6 +109,14 @@ def logout():
     flash("Sessió tancada correctament!", "success")
     return redirect(url_for('login'))
 
+@app.route('/flagsValidate', methods=['POST'])
+def flagsValidate():
+    if 'flag' not in request.form:
+        return "Error: flag no proporcionada", 400
+    
+    flag = request.form['flag']
+    return render_template('flags-validate.php', flag=flag)
+
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 @login_required
 def admin_delete_user(user_id):
