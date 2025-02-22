@@ -2,7 +2,7 @@
     $ftp_server = "192.168.1.46"; 
     $ftp_user_name = "scruz";  
     $ftp_user_pass = "1234";  
-    $ftp_directory = "/flags"; 
+    $ftp_directory = "/home"; 
 
     $conn_id = ftp_connect($ftp_server);
     if (!$conn_id) {
