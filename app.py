@@ -112,7 +112,8 @@ def logout():
 @app.route('/validate', methods=['POST'])
 def validate():
     flag = request.form['flag']
-    return redirect(f'http://localhost/flags-validate.php?flag={flag}')
+    file = request.form['file']
+    return redirect(f'http://localhost/flags-validate.php?flag={flag}?file={file}')
 
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 @login_required
