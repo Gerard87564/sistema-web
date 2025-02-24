@@ -109,10 +109,6 @@ def logout():
     flash("Sessió tancada correctament!", "success")
     return redirect(url_for('login'))
 
-from flask import Flask, request, redirect
-
-app = Flask(__name__)
-
 @app.route('/validate', methods=['POST'])
 def validate():
     flag = request.form['flag']
