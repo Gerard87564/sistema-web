@@ -33,7 +33,7 @@
                         font-family: 'Arial', sans-serif;
                         margin: 0;
                         padding: 0;
-                        background-color: #f4f4f9;
+                        background: linear-gradient(45deg, #dc3545, #000000);
                         display: flex;
                         justify-content: center;
                         align-items: center;
