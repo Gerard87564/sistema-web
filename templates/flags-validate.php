@@ -6,12 +6,12 @@
 
     $conn_id = ftp_connect($ftp_server);
     if (!$conn_id) {
-        die("No se pudo conectar al servidor FTP $ftp_server");
+        die("No s'ha pogut conectar al servidor FTP $ftp_server");
     }
 
     $login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass);
     if (!$login_result) {
-        die("Conexión FTP fallida");
+        die("Conexió FTP fallida");
     }
 
     if (isset($_GET['flag']) && isset($_GET['file'])) {
@@ -21,33 +21,32 @@
         ftp_chdir($conn_id, $ftp_directory);
         $file_list = ftp_nlist($conn_id, ".");
 
-        // Asegurar que el archivo existe antes de leerlo
         if (in_array($file, $file_list)) {
             $temp_file = "temp_$file";
             if (ftp_get($conn_id, $temp_file, $file, FTP_BINARY)) {
                 $content = file_get_contents($temp_file);
-                unlink($temp_file); // Elimina el archivo temporal después de leerlo
+                unlink($temp_file); 
             } else {
-                die("Error al descargar el archivo desde el FTP.");
+                die("Error al descargar el archiu desde el FTP.");
             }
         } else {
-            die("El archivo no existe en el servidor FTP.");
+            die("El arxiu no existeix en el servidor FTP.");
         }
 
-        if (in_array($flag, $file_list)) {
+        if (in_array($file, $file_list)) {
             if (trim($content) == trim($flag)) {
-                $message = "¡Flag correcta!";
+                $message = "Flag correcte!";
                 $class = "correct-flag";
-                $bg_color = "#d4edda"; // Verde claro
+                $bg_color = "#d4edda"; 
             } else {
-                $message = "¡Flag incorrecta!";
+                $message = "Flag incorrecte!";
                 $class = "incorrect-flag";
-                $bg_color = "#f8d7da"; // Rojo claro
+                $bg_color = "#f8d7da"; 
             }
         } else {
-            $message = "Archivo incorrecto...";
+            $message = "Archiu incorrecte...";
             $class = "incorrect-flag";
-            $bg_color = "#f8d7da"; // Rojo claro
+            $bg_color = "#f8d7da"; 
         }
 
         echo "
@@ -56,7 +55,7 @@
         <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>Resultado</title>
+            <title>Resultat</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -98,7 +97,7 @@
         </html>
         ";
     } else {
-        echo "<p style='color: red;'>No se recibió ninguna flag o archivo.</p>";
+        echo "<p style='color: red;'>No s'ha rebut ninguna flag o arxiu.</p>";
     }
 
     ftp_close($conn_id);
