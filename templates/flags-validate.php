@@ -2,8 +2,8 @@
     $ftp_server = "192.168.1.46"; 
     $ftp_user_name = "scruz";  
     $ftp_user_pass = "1234";  
-    $ftp_directory = "/home"; 
-
+    $ftp_directory = "/srv/ftp"; 
+    
     $conn_id = ftp_connect($ftp_server);
     if (!$conn_id) {
         die("No se pudo conectar al servidor FTP $ftp_server");
