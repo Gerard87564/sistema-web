@@ -16,108 +16,162 @@
 
     if (isset($_GET['flag'])) {
         $flag = $_GET['flag']; 
+        $file = $_GET['file'];
 
         ftp_chdir($conn_id, $ftp_directory);
         $file_list = ftp_nlist($conn_id, ".");
+        $content = file_get_contents($file);
 
         if (in_array($flag, $file_list)) {
-            echo "
-            <!DOCTYPE html>
-            <html lang='es'>
-            <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                <title>Resultat</title>
-                <style>
-                    body {
-                        font-family: 'Arial', sans-serif;
-                        margin: 0;
-                        padding: 0;
-                        background: linear-gradient(45deg, #dc3545, #000000);
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        color: #333;
-                    }
-                    .container {
-                        text-align: center;
-                        padding: 20px;
-                        background-color: #ffffff;
-                        border-radius: 10px;
-                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                        max-width: 600px;
-                        width: 100%;
-                    }
-                    .correct-flag {
-                        color: green;
-                        font-weight: bold;
-                        font-size: 22px;
-                        background-color: #d4edda;
-                        padding: 15px;
-                        border-radius: 8px;
-                        border: 1px solid #c3e6cb;
-                        margin: 20px 0;
-                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                    }
-                </style>
-            </head>
-            <body>
-                <div class='container'>
-                    <p class='correct-flag'>¡Flag correcta!</p>
-                </div>
-            </body>
-            </html>
-            ";
+
+            if ($content==$flag) {
+                echo "
+                <!DOCTYPE html>
+                <html lang='es'>
+                <head>
+                    <meta charset='UTF-8'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                    <title>Resultat</title>
+                    <style>
+                        body {
+                            font-family: 'Arial', sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            background: linear-gradient(45deg, #dc3545, #000000);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            color: #333;
+                        }
+                        .container {
+                            text-align: center;
+                            padding: 20px;
+                            background-color: #ffffff;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                            max-width: 600px;
+                            width: 100%;
+                        }
+                        .correct-flag {
+                            color: green;
+                            font-weight: bold;
+                            font-size: 22px;
+                            background-color: #d4edda;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #c3e6cb;
+                            margin: 20px 0;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <p class='correct-flag'>¡Flag correcta!</p>
+                    </div>
+                </body>
+                </html>
+                ";   
+            } else {
+                echo "
+                <!DOCTYPE html>
+                <html lang='es'>
+                <head>
+                    <meta charset='UTF-8'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                    <title>Resultat</title>
+                    <style>
+                        body {
+                            font-family: 'Arial', sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f4f4f9;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            color: #333;
+                        }
+                        .container {
+                            text-align: center;
+                            padding: 20px;
+                            background-color: #ffffff;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                            max-width: 600px;
+                            width: 100%;
+                        }
+                        .incorrect-flag {
+                            color: red;
+                            font-weight: bold;
+                            font-size: 22px;
+                            background-color: #f8d7da;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #f5c6cb;
+                            margin: 20px 0;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <p class='incorrect-flag'>¡Flag incorrecta!</p>
+                    </div>
+                </body>
+                </html>
+                ";
+            }
         } else {
-            echo "
-            <!DOCTYPE html>
-            <html lang='es'>
-            <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                <title>Resultat</title>
-                <style>
-                    body {
-                        font-family: 'Arial', sans-serif;
-                        margin: 0;
-                        padding: 0;
-                        background-color: #f4f4f9;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        color: #333;
-                    }
-                    .container {
-                        text-align: center;
-                        padding: 20px;
-                        background-color: #ffffff;
-                        border-radius: 10px;
-                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                        max-width: 600px;
-                        width: 100%;
-                    }
-                    .incorrect-flag {
-                        color: red;
-                        font-weight: bold;
-                        font-size: 22px;
-                        background-color: #f8d7da;
-                        padding: 15px;
-                        border-radius: 8px;
-                        border: 1px solid #f5c6cb;
-                        margin: 20px 0;
-                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                    }
-                </style>
-            </head>
-            <body>
-                <div class='container'>
-                    <p class='incorrect-flag'>¡Flag incorrecta!</p>
-                </div>
-            </body>
-            </html>
-            ";
+
+            echo 
+            "<!DOCTYPE html>
+                <html lang='es'>
+                <head>
+                    <meta charset='UTF-8'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                    <title>Resultat</title>
+                    <style>
+                        body {
+                            font-family: 'Arial', sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f4f4f9;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            color: #333;
+                        }
+                        .container {
+                            text-align: center;
+                            padding: 20px;
+                            background-color: #ffffff;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                            max-width: 600px;
+                            width: 100%;
+                        }
+                        .incorrect-flag {
+                            color: red;
+                            font-weight: bold;
+                            font-size: 22px;
+                            background-color: #f8d7da;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #f5c6cb;
+                            margin: 20px 0;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <p class='correct-flag'>No s'ha indiciat cap fitxer...</p>
+                    </div>
+                </body>
+                </html>";
         }
     } else {
         echo "<p style='color: red;'>No se recibió ninguna flag.</p>";
