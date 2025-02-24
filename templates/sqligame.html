@@ -114,6 +114,8 @@
 </head>
 <body>
     <form method="post" action="{{ url_for('validate') }}">
+        <label>Ingresa la ruta / nom del fitxer:</label>
+        <input type="text" name="file" required><br><br>
         <label>Ingresa la flag:</label>
         <input type="text" name="flag" required><br><br>
         <button type="submit">Valida!</button>
