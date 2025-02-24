@@ -168,7 +168,7 @@
                 </head>
                 <body>
                     <div class='container'>
-                        <p class='correct-flag'>No s'ha indiciat cap fitxer...</p>
+                        <p class='correct-flag'>Fitxer incorrecte...</p>
                     </div>
                 </body>
                 </html>";
