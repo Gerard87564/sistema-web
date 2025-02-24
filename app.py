@@ -109,11 +109,15 @@ def logout():
     flash("Sessió tancada correctament!", "success")
     return redirect(url_for('login'))
 
+from flask import Flask, request, redirect
+
+app = Flask(__name__)
+
 @app.route('/validate', methods=['POST'])
 def validate():
     flag = request.form['flag']
     file = request.form['file']
-    return redirect(f'http://localhost/flags-validate.php?flag={flag}?file={file}')
+    return redirect(f'http://localhost/flags-validate.php?flag={flag}&file={file}')
 
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 @login_required
