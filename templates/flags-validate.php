@@ -1,5 +1,5 @@
 <?php
-    require_once('connexioDB.php'); // Conexión a la base de datos
+    require_once('connexioDB.php');
 
     $ftp_server = "10.0.5.210"; 
     $ftp_user_name = "scruz";  
