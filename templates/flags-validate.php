@@ -1,4 +1,6 @@
 <?php
+    require_once('connexioDB.php'); // Conexión a la base de datos
+
     $ftp_server = "10.0.5.210"; 
     $ftp_user_name = "scruz";  
     $ftp_user_pass = "1234";  
@@ -18,6 +20,15 @@
         $flag = $_GET['flag'];
         $file = $_GET['file'];
 
+        $sql = "SELECT * FROM flags WHERE flag = '$flag' AND file = '$file'";
+        $result = $db->query($sql);
+
+        if ($result->rowCount() > 0) {
+            echo "Flag trobada a la base de dades!";
+        } else {
+            echo "Flag no trobada.";
+        }
+
         ftp_chdir($conn_id, $ftp_directory);
         $file_list = ftp_nlist($conn_id, ".");
 
@@ -25,7 +36,7 @@
             $temp_file = "temp_$file";
             if (ftp_get($conn_id, $temp_file, $file, FTP_BINARY)) {
                 $content = file_get_contents($temp_file);
-                unlink($temp_file); 
+                unlink($temp_file);
             } else {
                 die("Error al descargar el archiu desde el FTP.");
             }
@@ -44,7 +55,7 @@
                 $bg_color = "#f8d7da"; 
             }
         } else {
-            $message = "Archiu incorrecte...";
+            $message = "Arxiu incorrecte...";
             $class = "incorrect-flag";
             $bg_color = "#f8d7da"; 
         }
