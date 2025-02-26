@@ -1,7 +1,7 @@
 <?php
     $db_host = "192.168.1.115"; 
     $db_user = "root";     
-    $db_pass = ""; 
+    $db_pass = " "; 
     $db_name = "dvwa";       
     $db_port = 3306;
 
