@@ -6,10 +6,10 @@
     $db_port = 3306;
     $db_socket = "/var/run/mysqld/mysqld.sock"; 
 
-    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port, $db_socket);
+    $db = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port, $db_socket);
 
-    if ($conn->connect_error) {
-        die("Conexión fallida: " . $conn->connect_error);
+    if ($db->connect_error) {
+        die("Conexión fallida: " . $db->connect_error);
     }
     echo "Conexión exitosa a MySQL en $db_host";
 ?>
