@@ -1,5 +1,5 @@
 <?php
-    $db_host = "192.168.1.115"; 
+    $db_host = "10.0.3.15"; 
     $db_user = "root";     
     $db_pass = " "; 
     $db_name = "dvwa";       
