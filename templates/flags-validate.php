@@ -20,10 +20,10 @@
         $flag = $_GET['flag'];
         $file = $_GET['file'];
 
-        $sql = "SELECT * FROM flags WHERE flag = '$flag' AND file = '$file'";
+        $sql = "SELECT * FROM flags WHERE contenido = '$flag'";
         $result = $db->query($sql);
 
-        if ($result->rowCount() > 0) {
+        if ($result) {
             echo "Flag trobada a la base de dades!";
         } else {
             echo "Flag no trobada.";
