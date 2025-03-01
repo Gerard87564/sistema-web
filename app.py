@@ -139,7 +139,7 @@ def login():
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
             flash("Sessió iniciada correctament!", "success")
-            return redirect(url_for('web'))
+            return redirect(url_for('pujadesFitxers'))
         else:
             flash("Credencials incorrectes!", "danger")
             return redirect(url_for('login'))
@@ -150,6 +150,11 @@ def login():
 @login_required
 def web():
     return render_template('web.html')
+
+@app.route('/pujadesFitxers')
+@login_required
+def pujadesFitxers():
+    return render_template('pujadesFitxers.html')
 
 @app.route('/logout')
 @login_required
