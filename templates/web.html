@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redzone CTF</title>
+    <title>SkyVault</title>
     <link rel="icon" href="{{ url_for('static', filename='images/Remove-bg.ai_1738613576296.ico') }}" type="image/x-icon">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -100,21 +100,10 @@
             border-radius: 5px;
         }
 
-        #leaderboard table {
+        #files div {
             width: 80%;
             margin: 0 auto;
             border-collapse: collapse;
-        }
-
-        #leaderboard th, #leaderboard td {
-            border: 1px solid #ff0000;
-            padding: 15px;
-            text-align: center;
-        }
-
-        #leaderboard th {
-            background-color: #ff0000;
-            color: #121212;
         }
 
         footer {
@@ -248,12 +237,10 @@
 </head>
 <body>
     <header>
-        <h1>Redzone CTF</h1>
+        <h1>SkyVault</h1>
         <nav class="col-12 col-lg-12 col-dm-12 col-sm-12">
             <ul id="htopnav">
                 <li><a href="{{ url_for('home') }}">Inici</a></li>
-                <li><a href="{{ url_for('reptes') }}">Reptes</a></li>
-                <li><a href="{{ url_for('admin_dashboard') }}">Clasificació</a></li>
                 <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
                 <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
                 <li><a href="{{ url_for('register') }}">Registre</a></li>
@@ -266,40 +253,28 @@
     </header>
 
     <section id="hero">
-        <h2>Benvingut a Redzone CTF</h2>
-        <p>Posa a prova les teves habilitats en ciberseguretat i desafía a altres jugadors.</p>
+        <h2>Benvingut a SkyVault</h2>
+        <p>El teu núvol, el teu espai, la teva seguretat</p>
         <a href="{{ url_for('register') }}" class="btn">Uneixte al repte!</a>
     </section>
 
     <section id="about">
-        <h2>¿Qué es un CTF?</h2>
-        <p>Un Capture The Flag (CTF) es una competencia de seguretat informatica on els jugadors resolen reptes per trobar 'banderes' amagades.</p>
-    </section>
+        <h2>¿Qué es SkyVault?</h2>
+        <p>SkyVault és una plataforma d'emmagatzematge al núvol que et permet pujar, organitzar i accedir als teus fitxers de manera segura des de qualsevol lloc. Amb un disseny intuïtiu i funcions avançades, SkyVault és la solució perfecta per als que busquen un espai fiable per als seus documents i fitxers digitals.</p>
+    </section>    
 
-    <section id="challenges">
-        <h2>Reptes Populars</h2>
-        <ul>    
-            <li><a href="{{ url_for('sqli') }}">SQL injection</a></li>
-            <li><a href="{{ url_for('criptografia') }}">Criptografía</a></li>
-        </ul>   
-        <a href="{{ url_for('reptes') }}" class="btn">Veure més reptes</a>
-    </section>
-
-    <section id="leaderboard">
-        <h2>Calificació</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Posició</th>
-                    <th>Usuari</th>
-                    <th>Punts</th>
-                </tr>
-            </thead>
-        </table>
+    <section id="files">
+        {% for file in files %}
+            <div>
+                <p>{{ file.filename }}</p>
+                <a href="{{ url_for('download_file', file_id=file.id) }}">Descargar</a>
+                <a href="{{ url_for('delete_file', file_id=file.id) }}" onclick="return confirm('¿Eliminar archivo?');">Eliminar</a>
+            </div>
+        {% endfor %}
     </section>
 
     <footer>
-        <p>&copy; 2025 Redzone CTF. All Rights Reserved.</p>
+        <p>&copy; 2025 SkyVault. All Rights Reserved.</p>
     </footer>
 </body>
 </html>
