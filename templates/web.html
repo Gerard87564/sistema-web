@@ -251,10 +251,12 @@
             <div>
                 <p>{{ file.filename }}</p>
                 <a href="{{ url_for('download_file', file_id=file.id) }}">Descargar</a>
-                <a href="{{ url_for('delete_file', file_id=file.id) }}" onclick="return confirm('¿Eliminar archivo?');">Eliminar</a>
+                <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}">
+                    <button type="submit" onclick="return confirm('¿Eliminar archivo?');">Eliminar</button>
+                </form>
             </div>
         {% endfor %}
-    </section>
+    </section>    
 
     <footer>
         <p>&copy; 2025 SkyVault. All Rights Reserved.</p>
