@@ -7,6 +7,7 @@ from flask_migrate import Migrate
 import os
 from werkzeug.utils import secure_filename
 from flask import send_file
+from flask import send_from_directory
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sistema_web.db'
@@ -66,7 +67,7 @@ def upload_file():
     db.session.commit()
 
     flash('Arxiu pujat amb éxit!', 'success')
-    return redirect(url_for('web'))
+    return redirect(url_for('list_files'))
 
 @app.route('/files')
 @login_required
@@ -77,27 +78,33 @@ def list_files():
 @app.route('/download/<int:file_id>')
 @login_required
 def download_file(file_id):
-    file = File.query.filter_by(id=file_id, user_id=current_user.id).first()
-    if file:
-        return send_file(file.filepath, as_attachment=True)
-    flash('Arxiu no trobat.', 'danger')
-    return redirect(url_for('web'))
+    file = File.query.get_or_404(file_id)
+    if file.user_id != current_user.id:
+        abort(403) 
+    return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, as_attachment=True)
 
 
-@app.route('/delete/<int:file_id>')
+@app.route('/delete/<int:file_id>', methods=['POST'])
 @login_required
 def delete_file(file_id):
-    file = File.query.filter_by(id=file_id, user_id=current_user.id).first()
-    if file:
-        os.remove(file.filepath) 
-        db.session.delete(file) 
+    file = File.query.get_or_404(file_id)
+    if file.user_id != current_user.id:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('home'))
+
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    try:
+        os.remove(filepath)
+        db.session.delete(file)
         db.session.commit()
-        flash('Arxiu esborrat amb éxit!', 'success')
-    else:
-        flash('Arxiu no trobat.', 'danger')
+        flash('Archivo eliminado correctamente', 'success')
+    except FileNotFoundError:
+        flash('File not found.', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting file: {e}', 'danger') 
 
-    return redirect(url_for('web'))
-
+    return redirect(url_for('home'))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -105,7 +112,8 @@ def load_user(user_id):
 
 @app.route('/')
 def home():
-    return render_template('web.html')
+    files = File.query.filter_by(user_id=current_user.id).all()
+    return render_template('web.html', files=files)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
