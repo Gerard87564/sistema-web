@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import IntegrityError
 from flask_migrate import Migrate
-from sys import os
+import os
 from werkzeug.utils import secure_filename
 from flask import send_file
 
