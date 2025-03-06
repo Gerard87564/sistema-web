@@ -52,7 +52,7 @@
         }
 
         nav a {
-            color: #ff0000;
+            color: #e74c3c; /* Rojo menos saturado */
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
@@ -60,22 +60,23 @@
         }
 
         nav a:hover {
-            color: #ff9800;
+            color: #ff8c00; /* Naranja suave */
         }
 
         .btn {
             display: inline-block;
             padding: 15px 30px;
-            background-color: #ff0000;
+            background-color: #e74c3c; /* Rojo menos saturado */
             color: #121212;
             text-decoration: none;
             border-radius: 5px;
             font-size: 1.2em;
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, transform 0.2s ease;
         }
 
         .btn:hover {
-            background-color: #ff0000;
+            background-color: #c0392b; /* Rojo más oscuro */
+            transform: scale(1.05); /* Efecto de zoom */
         }
 
         section {
@@ -87,6 +88,8 @@
             width: 80%;
             margin: 0 auto;
             border-collapse: collapse;
+            background-color: rgba(255, 255, 255, 0.1); /* Fondo sutil */
+            border-radius: 8px;
         }
 
         footer {
@@ -94,8 +97,9 @@
             padding: 20px;
             text-align: center;
             margin-top: 20px;
+            color: #ffffff;
         }
-        
+
         h1 {
             font-size: 30px;
         }
@@ -132,84 +136,83 @@
             .col-sm-11 {width: 91.66%;}
             .col-sm-12 {
                 width: 100%;
+            }
 
-                #menu {
-                    position: relative;
-                    bottom: 4em;
-                }
+            #menu {
+                position: relative;
+                bottom: 4em;
+            }
 
-                #bar,
-                #bar:after,
-                #bar:before {
-                    width: 2em;
-                    height: 0.1em;
-                }
+            #bar,
+            #bar:after,
+            #bar:before {
+                width: 2em;
+                height: 0.1em;
+            }
 
-                #bar {
-                    position: absolute;
-                    transform: translateY(25px);
-                    background: black;
-                    transition: all 0ms 300ms;
-                }
+            #bar {
+                position: absolute;
+                transform: translateY(25px);
+                background: black;
+                transition: all 0ms 300ms;
+            }
 
-                #bar.visible {
-                    position: fixed;
-                }
+            #bar.visible {
+                position: fixed;
+            }
 
-                #bar.animate {
-                    background: rgba(255, 255, 255, 0);            
-                }
+            #bar.animate {
+                background: rgba(255, 255, 255, 0);            
+            }
 
+            #bar:before {
+                content: "";
+                position: absolute;
+                left: 0;
+                bottom: 0.5em;
+                background: black;
+                transition: bottom 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
+            }
 
-                #bar:before {
-                    content: "";
-                    position: absolute;
-                    left: 0;
-                    bottom: 0.5em;
-                    background: black;
-                    transition: bottom 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
-                }
+            #bar:after {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0.5em;
+                background: black;
+                transition: top 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
+            }
 
-                #bar:after {
-                    content: "";
-                    position: absolute;
-                    left: 0;
-                    top: 0.5em;
-                    background: black;
-                    transition: top 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
-                }
+            #bar.animate:after {
+                top: 0;
+                transform: rotate(45deg);
+                transition: top 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1);
+            }
 
-                #bar.animate:after {
-                    top: 0;
-                    transform: rotate(45deg);
-                    transition: top 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1);
-                }
+            #bar.animate:before {
+                bottom: 0;
+                transform: rotate(-45deg);
+                transition: bottom 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1);
+            }
+                
+            #htopnav {
+                display: none;
+            }
 
-                #bar.animate:before {
-                    bottom: 0;
-                    transform: rotate(-45deg);
-                    transition: bottom 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms 300ms cubic-bezier(0.23, 1, 0.32, 1);
-                }
-                    
-                #htopnav {
-                    display: none;
-                }
+            #htopnav.visible {
+                display: flex;
+                flex-direction: column;
+                position: fixed;
+                animation: slideDown 0.3s ease-out;
+                background-color: #1e1e1e;
+                height: 100dvh;
+                top: 5em;
+                right: 12em;
+                padding-left: 1em;
+            }
 
-                #htopnav.visible {
-                    display: flex;
-                    flex-direction: column;
-                    position: fixed;
-                    animation: slideDown 0.3s ease-out;
-                    background-color: #1e1e1e;
-                    height: 100dvh;
-                    top: 5em;
-                    right: 12em;
-                    padding-left: 1em;
-                }
-
-                #htopnav.visible li {
-                    margin-top: 1em;
-                }
+            #htopnav.visible li {
+                margin-top: 1em;
             }
 
             h1 {
