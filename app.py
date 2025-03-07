@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
@@ -44,6 +44,26 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
+@app.route("/rename", methods=["POST"])
+def rename_file():
+    print("Raw request data:", request.data)
+    print("Form data:", request.form) 
+
+    old_name = request.form.get("old_name", "").strip() 
+    new_name = request.form.get("new_name", "").strip()
+
+    if not old_name or not new_name:
+        return jsonify({"error": "Els noms no poden estar buits"}), 400
+
+    old_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(old_name))
+    new_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(new_name))
+
+    if not os.path.exists(old_path):
+        return jsonify({"error": "El fitxer o carpeta no existeix"}), 404
+
+    os.rename(old_path, new_path)
+    return redirect(url_for('list_files'))
 
 @app.route('/upload', methods=['POST'])
 @login_required
