@@ -21,6 +21,11 @@
                 icon.classList.toggle('visible');
             });
         });
+
+        function toggleRenameForm(fileId) {
+            let form = document.getElementById("rename-form-" + fileId);
+            form.style.display = (form.style.display === "none") ? "block" : "none";
+        }
     </script>
     <style>
         body {
@@ -372,6 +377,13 @@
                 <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}">
                     <button type="submit" onclick="return confirm('¿Eliminar archivo?');">Eliminar</button>
                 </form>
+                <button onclick="toggleRenameForm('{{ file.id }}')">Canviar Nom</button>
+
+                <form action="{{ url_for('rename_file') }}" method="post">
+                    <input type="hidden" name="old_name" value="{{ file.filename }}">
+                    <input type="text" name="new_name" placeholder="Nou nom" required>
+                    <button type="submit">Confirmar</button>
+                </form>                
             </div>
         {% endfor %}
     </section>    
