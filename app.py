@@ -47,10 +47,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 @app.route("/rename", methods=["POST"])
 def rename_file():
-    print("Raw request data:", request.data)
-    print("Form data:", request.form) 
-
-    old_name = request.form.get("old_name", "").strip() 
+    old_name = request.form.get("old_name", "").strip()
     new_name = request.form.get("new_name", "").strip()
 
     if not old_name or not new_name:
@@ -62,9 +59,24 @@ def rename_file():
     if not os.path.exists(old_path):
         return jsonify({"error": "El fitxer o carpeta no existeix"}), 404
 
-    os.rename(old_path, new_path)
-    return redirect(url_for('list_files'))
+    try:
+        os.rename(old_path, new_path) 
 
+        file_to_update = File.query.filter_by(filename=old_name, filepath=old_path).first()
+
+        if file_to_update:
+            file_to_update.filename = new_name 
+            file_to_update.filepath = new_path 
+            db.session.commit() 
+        else:
+            return jsonify({"error": "No se encontró el archivo en la base de datos"}), 404
+
+        return redirect(url_for('home'))
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error al renombrar el archivo: {e}"}), 500
+    
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
@@ -115,16 +127,16 @@ def delete_file(file_id):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     try:
         os.remove(filepath)
-        db.session.delete(file)
-        db.session.commit()
+        db.session.delete(file) 
+        db.session.commit() 
         flash('Archivo eliminado correctamente', 'success')
     except FileNotFoundError:
         flash('File not found.', 'danger')
     except Exception as e:
         db.session.rollback()
-        flash(f'Error deleting file: {e}', 'danger') 
+        flash(f'Error deleting file: {e}', 'danger')
 
-    return redirect(url_for('home'))
+    return redirect(url_for('list_files'))
 
 @login_manager.user_loader
 def load_user(user_id):
