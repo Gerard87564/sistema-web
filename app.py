@@ -127,16 +127,27 @@ def delete_file(file_id):
         return redirect(url_for('home'))
 
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+
+    print(f"Intentando eliminar: {filepath}") 
+
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+            print("Archivo eliminado del sistema de archivos.")
+        except Exception as e:
+            flash(f'Error eliminando el archivo: {e}', 'danger')
+            return redirect(url_for('list_files'))
+    else:
+        flash('El archivo no existe en el sistema.', 'warning')
+
     try:
-        os.remove(filepath)
-        db.session.delete(file) 
-        db.session.commit() 
+        db.session.delete(file)
+        db.session.commit()
+        print("Archivo eliminado de la base de datos.")
         flash('Archivo eliminado correctamente', 'success')
-    except FileNotFoundError:
-        flash('File not found.', 'danger')
     except Exception as e:
         db.session.rollback()
-        flash(f'Error deleting file: {e}', 'danger')
+        flash(f'Error eliminando de la base de datos: {e}', 'danger')
 
     return redirect(url_for('list_files'))
 
@@ -290,7 +301,7 @@ def move_file():
         db.session.rollback()
         flash(f"Error al mover l'arxiu: {e}", "danger")
 
-    return redirect(url_for("list_files"))
+    return redirect(url_for("list_folder", folder_name=folder_name))
 
 @app.route("/folder/<path:folder_name>")
 @login_required
@@ -304,6 +315,41 @@ def list_folder(folder_name):
     files = File.query.filter(File.filepath.like(f"{folder_path}%"), File.user_id == current_user.id).all()
 
     return render_template("web.html", files=files, current_folder=folder_name)
+
+import shutil
+
+@app.route('/delete_folder', methods=['POST'])
+@login_required
+def delete_folder():
+    folder_name = request.form.get("folder_name", "").strip()
+
+    if not folder_name:
+        flash("El nom de la carpeta no pot estar buit", "danger")
+        return redirect(url_for("list_files"))
+
+    folder_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
+
+    if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+        flash("La carpeta no existeix", "danger")
+        return redirect(url_for("list_files"))
+
+    user_files = File.query.filter(File.filepath.like(f"{folder_path}%"), File.user_id == current_user.id).all()
+
+    try:
+        for file in user_files:
+            os.remove(file.filepath)  
+            db.session.delete(file)  
+
+        db.session.commit()
+
+        shutil.rmtree(folder_path)
+        flash("Carpeta eliminada correctament", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error eliminant carpeta: {e}", "danger")
+
+    return redirect(url_for("list_files"))
 
 from app import app, db
 with app.app_context():
