@@ -104,8 +104,10 @@ def upload_file():
 @app.route('/files')
 @login_required
 def list_files():
-    files = File.query.filter_by(user_id=current_user.id).all()
-    return render_template('web.html', files=files)
+    user_files = File.query.filter_by(user_id=current_user.id).all()
+    folders = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if os.path.isdir(os.path.join(app.config['UPLOAD_FOLDER'], f))]
+
+    return render_template('web.html', files=user_files, folders=folders)
 
 @app.route('/download/<int:file_id>')
 @login_required
@@ -234,6 +236,74 @@ def admin_dashboard():
 
     users = User.query.all()
     return render_template('admin_dashboard.html', users=users)
+
+@app.route("/create_folder", methods=["POST"])
+@login_required
+def create_folder():
+    folder_name = request.form.get("folder_name", "").strip()
+    if not folder_name:
+        flash("El nom de la carpeta no pot estar buit", "danger")
+        return redirect(url_for("list_files"))
+
+    folder_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
+
+    try:
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+            flash("Carpeta creada exitosament", "success")
+        else:
+            flash("La carpeta ja existeix", "warning")
+    except Exception as e:
+        flash(f"Error al crear la carpeta: {e}", "danger")
+
+    return redirect(url_for("list_files"))
+
+
+@app.route("/move_file", methods=["POST"])
+@login_required
+def move_file():
+    file_id = request.form.get("file_id")
+    folder_name = request.form.get("folder_name", "").strip()
+
+    if not file_id or not folder_name:
+        flash("Arxiu i carpeta son necessaris", "danger")
+        return redirect(url_for("list_files"))
+
+    file = File.query.get(file_id)
+    if not file or file.user_id != current_user.id:
+        flash("Arxiu no trobat o sense permisos", "danger")
+        return redirect(url_for("list_files"))
+
+    old_path = file.filepath
+    new_folder = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
+    new_path = os.path.join(new_folder, secure_filename(file.filename))
+
+    try:
+        if not os.path.exists(new_folder):
+            os.makedirs(new_folder)
+
+        os.rename(old_path, new_path)
+        file.filepath = new_path
+        db.session.commit()
+        flash("Arxiu mogut exitosament!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al mover l'arxiu: {e}", "danger")
+
+    return redirect(url_for("list_files"))
+
+@app.route("/folder/<path:folder_name>")
+@login_required
+def list_folder(folder_name):
+    folder_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
+
+    if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+        flash("La carpeta no existeix", "danger")
+        return redirect(url_for("list_files"))
+
+    files = File.query.filter(File.filepath.like(f"{folder_path}%"), File.user_id == current_user.id).all()
+
+    return render_template("web.html", files=files, current_folder=folder_name)
 
 from app import app, db
 with app.app_context():

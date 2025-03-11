@@ -367,23 +367,44 @@
     <section id="about">
         <h2>¿Qué es SkyVault?</h2>
         <p>SkyVault és una plataforma d'emmagatzematge al núvol que et permet pujar, organitzar i accedir als teus fitxers de manera segura des de qualsevol lloc. Amb un disseny intuïtiu i funcions avançades, SkyVault és la solució perfecta per als que busquen un espai fiable per als seus documents i fitxers digitals.</p>
-    </section>    
+    </section>
+
+    <form action="{{ url_for('create_folder') }}" method="POST">
+        <input type="text" name="folder_name" placeholder="Nom de la carpeta" required>
+        <button type="submit">Crear Carpeta</button>
+    </form>
+    
+    {% for folder in folders %}
+        <a href="{{ url_for('list_folder', folder_name=folder) }}">{{ folder }}</a>
+    {% endfor %}
 
     <section id="files">
         {% for file in files %}
             <div>
                 <p>{{ file.filename }}</p>
                 <a href="{{ url_for('download_file', file_id=file.id) }}">Descargar</a>
+    
                 <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}">
-                    <button type="submit" onclick="return confirm('¿Eliminar archivo?');">Eliminar</button>
+                    <button type="submit" onclick="return confirm('¿Eliminar arxiu?');">Eliminar</button>
                 </form>
+    
                 <button onclick="toggleRenameForm('{{ file.id }}')">Canviar Nom</button>
-
-                <form action="{{ url_for('rename_file') }}" method="post">
+    
+                <form action="{{ url_for('rename_file') }}" method="post" style="display:none;" id="rename-form-{{ file.id }}">
                     <input type="hidden" name="old_name" value="{{ file.filename }}">
                     <input type="text" name="new_name" placeholder="Nou nom" required>
                     <button type="submit">Confirmar</button>
-                </form>                
+                </form>
+    
+                <form action="{{ url_for('move_file') }}" method="POST">
+                    <input type="hidden" name="file_id" value="{{ file.id }}">
+                    <select name="folder_name">
+                        {% for folder in folders %}
+                            <option value="{{ folder }}">{{ folder }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Mover</button>
+                </form>
             </div>
         {% endfor %}
     </section>    
