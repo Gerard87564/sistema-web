@@ -107,7 +107,7 @@ def list_files():
     user_files = File.query.filter_by(user_id=current_user.id).all()
     folders = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if os.path.isdir(os.path.join(app.config['UPLOAD_FOLDER'], f))]
 
-    return render_template('web.html', files=user_files, folders=folders)
+    return render_template('home.html', files=user_files, folders=folders)
 
 @app.route('/download/<int:file_id>')
 @login_required
@@ -210,11 +210,6 @@ def verify_login():
         return redirect(url_for('login')) 
     else:
         return redirect(url_for('home'))
-    
-@app.route('/pujadesFitxers')
-@login_required
-def pujadesFitxers():
-    return render_template('pujadesFitxers.html')
 
 @app.route('/logout')
 @login_required
