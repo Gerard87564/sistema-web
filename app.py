@@ -313,7 +313,7 @@ def list_folder(folder_name):
 
     files = File.query.filter(File.filepath.like(f"{folder_path}%"), File.user_id == current_user.id).all()
 
-    return render_template("web.html", files=files, current_folder=folder_name)
+    return render_template("home.html", files=files, current_folder=folder_name)
 
 import shutil
 
