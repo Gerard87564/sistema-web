@@ -82,13 +82,15 @@
 <body>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
-            {% for category, message in messages %}
+    {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+            {% if category == 'successL' or category == 'errorL' %}
                 <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
+            {% endif %}
+        {% endfor %}
+        </ul>
+    {% endif %}
     {% endwith %}
     
     <h2>Inicia sessió</h2>
