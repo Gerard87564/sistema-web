@@ -82,14 +82,17 @@
 <body>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
-            {% for category, message in messages %}
+    {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+            {% if category == 'successR' or category == 'errorR' %}
                 <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
+            {% endif %}
+        {% endfor %}
+        </ul>
+    {% endif %}
     {% endwith %}
+
 
     
     <h2>Registre d'usuari</h2>

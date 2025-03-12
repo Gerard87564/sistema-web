@@ -155,13 +155,10 @@ def delete_file(file_id):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-@app.route('/')
+@app.route('/home')
 def home():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))  
-
     files = File.query.filter_by(user_id=current_user.id).all()
-    return render_template('web.html', files=files)
+    return render_template('home.html', files=files)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -175,12 +172,12 @@ def register():
             new_user = User(username=username, password=hashed_password)
             db.session.add(new_user)
             db.session.commit()
-            flash('¡Usuario registrat amb exit!', 'success')
+            flash('¡Usuario registrat amb exit!', 'successR')
             return redirect(url_for('login'))  
 
         except IntegrityError:
             db.session.rollback()  
-            flash('Aquest nom de usuari ja está registrat. Escull un altre...', 'danger')
+            flash('Aquest nom de usuari ja está registrat. Escull un altre...', 'errorR')
             return redirect(url_for('register'))  
         
     return render_template('registre.html')
@@ -194,10 +191,10 @@ def login():
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
-            flash("Sessió iniciada correctament!", "success")
-            return redirect(url_for('pujadesFitxers'))
+            flash("Sessió iniciada correctament!", "successL")
+            return redirect(url_for('web'))
         else:
-            flash("Credencials incorrectes!", "danger")
+            flash("Credencials incorrectes!", "errorL")
             return redirect(url_for('login'))
 
     return render_template('iniciSessio.html')
@@ -207,6 +204,13 @@ def login():
 def web():
     return render_template('web.html')
 
+@app.route('/verify')
+def verify_login():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login')) 
+    else:
+        return redirect(url_for('home'))
+    
 @app.route('/pujadesFitxers')
 @login_required
 def pujadesFitxers():
