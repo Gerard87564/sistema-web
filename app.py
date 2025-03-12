@@ -37,6 +37,7 @@ class File(db.Model):
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     user = db.relationship('User', backref=db.backref('files', lazy=True))
+    
 
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -77,37 +78,66 @@ def rename_file():
         db.session.rollback()
         return jsonify({"error": f"Error al renombrar el archivo: {e}"}), 500
     
+
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
+    folder_name = request.form.get('folder_name') 
+    
+    if folder_name:
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(folder_name))
+
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path) 
+    else:
+        folder_path = app.config['UPLOAD_FOLDER'] 
+    
     if 'file' not in request.files:
         flash('No file part', 'danger')
-        return redirect(url_for('web'))
+        return redirect(request.referrer)  
 
     file = request.files['file']
     if file.filename == '':
         flash('No selected file', 'danger')
-        return redirect(url_for('web'))
+        return redirect(request.referrer) 
 
     filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    
+    filepath = os.path.join(folder_path, filename)
     file.save(filepath)
 
     new_file = File(filename=filename, filepath=filepath, user_id=current_user.id)
     db.session.add(new_file)
     db.session.commit()
 
-    flash('Arxiu pujat amb éxit!', 'success')
+    if folder_name:
+        return redirect(url_for('list_folder', folder_name=folder_name))
     return redirect(url_for('list_files'))
 
 @app.route('/files')
 @login_required
 def list_files():
-    user_files = File.query.filter_by(user_id=current_user.id).all()
-    folders = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if os.path.isdir(os.path.join(app.config['UPLOAD_FOLDER'], f))]
+    root_folder = app.config['UPLOAD_FOLDER']
 
-    return render_template('home.html', files=user_files, folders=folders)
+    user_files = File.query.filter(
+        File.filepath.startswith(root_folder),
+        File.user_id == current_user.id,
+        ~File.filepath.like(f"{os.path.join(root_folder, '%', '%')}")
+    ).all()
+
+    folders = [
+        f for f in os.listdir(root_folder)
+        if os.path.isdir(os.path.join(root_folder, f))
+    ]
+
+    return render_template('home.html', files=user_files, folders=folders, current_folder=None)
+
+
+@app.after_request
+def no_cache(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/download/<int:file_id>')
 @login_required
@@ -156,9 +186,18 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 @app.route('/home')
+@login_required
 def home():
+    root_folder = app.config['UPLOAD_FOLDER']
+
     files = File.query.filter_by(user_id=current_user.id).all()
-    return render_template('home.html', files=files)
+
+    folders = [
+        f for f in os.listdir(root_folder)
+        if os.path.isdir(os.path.join(root_folder, f))
+    ]
+
+    return render_template('home.html', files=files, folders=folders, current_folder=None)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -308,12 +347,18 @@ def list_folder(folder_name):
     folder_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
 
     if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
-        flash("La carpeta no existeix", "danger")
         return redirect(url_for("list_files"))
 
-    files = File.query.filter(File.filepath.like(f"{folder_path}%"), File.user_id == current_user.id).all()
+    files = File.query.filter(
+        File.filepath.startswith(folder_path),
+        File.user_id == current_user.id
+    ).all()
 
-    return render_template("home.html", files=files, current_folder=folder_name)
+    folders = [
+        f for f in os.listdir(folder_path)
+        if os.path.isdir(os.path.join(folder_path, f))
+    ]
+    return render_template("home.html", files=files, folders=folders, current_folder=folder_name)
 
 import shutil
 
@@ -349,6 +394,12 @@ def delete_folder():
         flash(f"Error eliminant carpeta: {e}", "danger")
 
     return redirect(url_for("list_files"))
+
+@app.route('/move_to_folder', methods=['POST'])
+@login_required
+def move_to_folder():
+    folder_name=request.form.get('folder_name')
+    return redirect(url_for("list_folder", folder_name=folder_name))
 
 from app import app, db
 with app.app_context():
