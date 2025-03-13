@@ -116,18 +116,21 @@ def upload_file():
 @app.route('/files')
 @login_required
 def list_files():
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    root_folder = app.config['UPLOAD_FOLDER']
 
     user_files = File.query.filter(
-        File.user_id == current_user.id
+        File.filepath.startswith(root_folder),
+        File.user_id == current_user.id,
+        ~File.filepath.like(f"{os.path.join(root_folder, '%', '%')}")
     ).all()
 
     folders = [
-        f for f in os.listdir(user_folder)
-        if os.path.isdir(os.path.join(user_folder, f))
+        f for f in os.listdir(root_folder)
+        if os.path.isdir(os.path.join(root_folder, f))
     ]
 
     return render_template('home.html', files=user_files, folders=folders, current_folder=None)
+
 
 @app.after_request
 def no_cache(response):
