@@ -116,21 +116,18 @@ def upload_file():
 @app.route('/files')
 @login_required
 def list_files():
-    root_folder = app.config['UPLOAD_FOLDER']
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
 
     user_files = File.query.filter(
-        File.filepath.startswith(root_folder),
-        File.user_id == current_user.id,
-        ~File.filepath.like(f"{os.path.join(root_folder, '%', '%')}")
+        File.user_id == current_user.id
     ).all()
 
     folders = [
-        f for f in os.listdir(root_folder)
-        if os.path.isdir(os.path.join(root_folder, f))
+        f for f in os.listdir(user_folder)
+        if os.path.isdir(os.path.join(user_folder, f))
     ]
 
     return render_template('home.html', files=user_files, folders=folders, current_folder=None)
-
 
 @app.after_request
 def no_cache(response):
@@ -290,15 +287,21 @@ def admin_dashboard():
 @login_required
 def create_folder():
     folder_name = request.form.get("folder_name", "").strip()
+    
     if not folder_name:
         flash("El nom de la carpeta no pot estar buit", "danger")
         return redirect(url_for("list_files"))
 
-    folder_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
+    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
+    
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder) 
+    
+    folder_path = os.path.join(user_folder, secure_filename(folder_name))
 
     try:
         if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+            os.makedirs(folder_path)  
             flash("Carpeta creada exitosament", "success")
         else:
             flash("La carpeta ja existeix", "warning")
