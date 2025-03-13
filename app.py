@@ -235,7 +235,7 @@ def login():
         else:
             flash("Credencials incorrectes!", "errorL")
             return redirect(url_for('login'))
-
+        
     return render_template('iniciSessio.html')
 
 @app.route('/web')
@@ -400,6 +400,10 @@ def delete_folder():
 def move_to_folder():
     folder_name=request.form.get('folder_name')
     return redirect(url_for("list_folder", folder_name=folder_name))
+
+@app.route('/')
+def ruta():
+    return redirect(url_for("web"))
 
 from app import app, db
 with app.app_context():
