@@ -116,7 +116,10 @@ def upload_file():
 @app.route('/files')
 @login_required
 def list_files():
-    root_folder = app.config['UPLOAD_FOLDER']
+    root_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))  
+
+    if not os.path.exists(root_folder):
+        os.makedirs(root_folder)  
 
     user_files = File.query.filter(
         File.filepath.startswith(root_folder),
@@ -188,13 +191,19 @@ def load_user(user_id):
 @app.route('/home')
 @login_required
 def home():
-    root_folder = app.config['UPLOAD_FOLDER']
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
 
-    files = File.query.filter_by(user_id=current_user.id).all()
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder) 
+
+    files = File.query.filter(
+        File.filepath.startswith(user_folder),
+        File.user_id == current_user.id
+    ).all()
 
     folders = [
-        f for f in os.listdir(root_folder)
-        if os.path.isdir(os.path.join(root_folder, f))
+        f for f in os.listdir(user_folder)
+        if os.path.isdir(os.path.join(user_folder, f))
     ]
 
     return render_template('home.html', files=files, folders=folders, current_folder=None)
@@ -290,21 +299,21 @@ def admin_dashboard():
 @login_required
 def create_folder():
     folder_name = request.form.get("folder_name", "").strip()
-    
+
     if not folder_name:
         flash("El nom de la carpeta no pot estar buit", "danger")
         return redirect(url_for("list_files"))
 
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
-    
+
     if not os.path.exists(user_folder):
-        os.makedirs(user_folder) 
-    
+        os.makedirs(user_folder)  
+
     folder_path = os.path.join(user_folder, secure_filename(folder_name))
 
     try:
         if not os.path.exists(folder_path):
-            os.makedirs(folder_path)  
+            os.makedirs(folder_path) 
             flash("Carpeta creada exitosament", "success")
         else:
             flash("La carpeta ja existeix", "warning")
@@ -350,7 +359,9 @@ def move_file():
 @app.route("/folder/<path:folder_name>")
 @login_required
 def list_folder(folder_name):
-    folder_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(folder_name))
+    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
+
+    folder_path = os.path.join(user_folder, secure_filename(folder_name))
 
     if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
         return redirect(url_for("list_files"))
@@ -364,6 +375,7 @@ def list_folder(folder_name):
         f for f in os.listdir(folder_path)
         if os.path.isdir(os.path.join(folder_path, f))
     ]
+
     return render_template("home.html", files=files, folders=folders, current_folder=folder_name)
 
 import shutil
