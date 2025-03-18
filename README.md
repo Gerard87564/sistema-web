@@ -1,10 +1,8 @@
 ### Que és? 📋
 ```
-RedZone CTF és un CTF com el seu nom indica el cual disposara d'una serie de reptes a realitzar
-amb un sistema de calificació, lo cual ho fa més divertit, cada repte dona x punts,
-qui tingui mes punts guanya.
+SkyVault és un sistema de cloud d'arxius al núvol tipus google drive o dropbox, amb ell podras administrar, pujar i modificar fitxers i carpetes, així com altres funcionalitats!
 ```
 ### Web 🌐
 ```
-A RedZone CTF ens podeu trobar a www.redzone-ctf.cat
+A SkyVault ens podeu trobar a www.skyvault.cat
 ```
