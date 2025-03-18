@@ -50,13 +50,15 @@ if not os.path.exists(UPLOAD_FOLDER):
 def rename_file():
     old_name = request.form.get("old_name", "").strip()
     new_name = request.form.get("new_name", "").strip()
+    folder_name = request.form.get('folder_name')
 
     if not old_name or not new_name:
         return jsonify({"error": "Els noms no poden estar buits"}), 400
 
-    old_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(old_name))
-    new_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(new_name))
-
+    old_path = os.path.join(app.config["UPLOAD_FOLDER"],str(current_user.id), folder_name, secure_filename(old_name))
+    new_path = os.path.join(app.config["UPLOAD_FOLDER"],str(current_user.id), folder_name, secure_filename(new_name))
+    print(f"Intentando renombrar: {new_path}") 
+    
     if not os.path.exists(old_path):
         return jsonify({"error": "El fitxer o carpeta no existeix"}), 404
 
