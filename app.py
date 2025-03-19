@@ -305,29 +305,30 @@ def admin_dashboard():
     users = User.query.all()
     return render_template('admin_dashboard.html', users=users)
 
-@app.route("/create_folder", methods=["POST"])
+@app.route('/create_folder', methods=['POST'])
 @login_required
 def create_folder():
-    folder_name = request.form.get("folder_name", "").strip()
-
-    if not folder_name:
-        flash("El nom de la carpeta no pot estar buit", "danger")
-        return redirect(url_for("list_files"))
+    parent_folder = request.form.get('parent_folder', '').strip()  
+    new_folder = request.form.get('new_folder', '').strip()  
+    if not new_folder:
+        return redirect(url_for("home"))
 
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
 
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
+    if parent_folder:
+        folder_path = os.path.join(user_folder, parent_folder, new_folder)
+    else:
+        folder_path = os.path.join(user_folder, new_folder)
 
-    folder_path = os.path.join(user_folder, secure_filename(folder_name))
+    folder_path = os.path.normpath(folder_path)
 
     try:
         os.makedirs(folder_path, exist_ok=True)
-        flash("Carpeta creada exitosament", "success")
+        flash(f'Carpeta "{new_folder}" creada en "{parent_folder}"', 'success')
     except Exception as e:
-        flash(f"Error al crear la carpeta: {e}", "danger")
+        flash(f'Error al crear la carpeta: {str(e)}', 'danger')
 
-    return redirect(url_for("list_files"))
+    return redirect(url_for('list_folder', folder_name=parent_folder or new_folder))
 
 @app.route("/move_file", methods=["POST"])
 @login_required
@@ -366,22 +367,27 @@ def move_file():
 @login_required
 def list_folder(folder_name):
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
-    folder_path = os.path.join(user_folder, secure_filename(folder_name))
+    folder_path = os.path.join(user_folder, folder_name)
 
-    if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
-        return redirect(url_for("list_files"))
+    folder_path = os.path.normpath(folder_path)
+
+    if not os.path.exists(folder_path):  
+        flash("La carpeta no existe", "danger")
+        return redirect(url_for("home"))
 
     files = File.query.filter(
         File.filepath.startswith(folder_path + os.sep),
         File.user_id == current_user.id
     ).all()
 
-    folders = [
-        f for f in os.listdir(folder_path)
-        if os.path.isdir(os.path.join(folder_path, f))
-    ]
+    folders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
 
-    return render_template("home.html", files=files, folders=folders, current_folder=folder_name)
+    return render_template(
+        "home.html",
+        files=files,
+        folders=folders,
+        current_folder=folder_name if folder_name else "" 
+    )
 
 import shutil
 
@@ -416,8 +422,18 @@ def delete_folder():
 @app.route('/move_to_folder', methods=['POST'])
 @login_required
 def move_to_folder():
-    folder_name=request.form.get('folder_name')
-    return redirect(url_for("list_folder", folder_name=folder_name))
+    folder_name = request.form.get("folder_name", "").strip()
+    current_folder = request.form.get("current_folder", "").strip()
+
+    if current_folder and current_folder.lower() != "none":
+        full_path = os.path.join(current_folder, folder_name)
+    else:
+        full_path = folder_name
+
+    full_path = full_path.replace("\\", "/")  
+
+    return redirect(url_for("list_folder", folder_name=full_path))
+
 
 @app.route('/')
 def ruta():
