@@ -481,7 +481,8 @@
 
     <section class="files">
         <form action="{{ url_for('create_folder') }}" method="POST">
-            <input type="text" name="folder_name" placeholder="Nom de la carpeta" required>
+            <input type="hidden" name="parent_folder" value="{{ current_folder }}">
+            <input type="text" name="new_folder" placeholder="Nombre de la nueva carpeta" required>
             <button type="submit">Crear Carpeta</button>
         </form>
 
@@ -526,7 +527,7 @@
             <h3>Carpetes</h3>
             {% for folder in folders %}
                 <div>
-                    <a href="{{ url_for('list_folder', folder_name=folder) }}">{{ folder }}</a>
+                    <a href="{{ url_for('list_folder', folder_name=(current_folder if current_folder else '') + '/' + folder) }}">{{ folder }}</a>
                     <form action="{{ url_for('delete_folder') }}" method="POST" style="display:inline;">
                         <input type="hidden" name="folder_name" value="{{ folder }}">
                         <button type="submit" onclick="return confirm('¿Eliminar carpeta?');">Eliminar</button>
@@ -534,8 +535,9 @@
 
                     <form action="{{ url_for('move_to_folder') }}" method="POST" style="display:inline;">
                         <input type="hidden" name="folder_name" value="{{ folder }}">
+                        <input type="hidden" name="current_folder" value="{{ current_folder }}">
                         <button type="submit">Entra a la carpeta</button>
-                    </form>
+                    </form>                    
                 </div>
             {% endfor %}
         {% else %}
