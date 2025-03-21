@@ -396,7 +396,12 @@ def list_folder(folder_name):
         if os.path.isdir(os.path.join(folder_path, f))
     ]
 
-    return render_template('home.html', files=files, folders=folders, current_folder=folder_name)
+    if folder_name:
+            parent_folder = '/'.join(folder_name.split('/')[:-1])
+    else:
+        parent_folder = ''
+
+    return render_template('home.html', files=files, folders=folders, current_folder=folder_name, parent_folder=parent_folder)
 
 import shutil
 
