@@ -29,11 +29,19 @@
     </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #121212;
+            background: linear-gradient(-45deg, #121212, #1a1a2e, #16213e, #0f3460);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: #ffffff;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         header {
@@ -41,10 +49,21 @@
             padding: 20px;
             text-align: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        header:hover {
+            transform: scale(1.02);
         }
 
         header h1 {
-            color: skyblue;
+            color: #20c997;
+            animation: textPop 1s ease-out;
+        }
+
+        @keyframes textPop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         nav ul {
@@ -61,7 +80,7 @@
         }
 
         nav a {
-            color: skyblue;
+            color: #20c997;
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
@@ -75,22 +94,29 @@
         .btn {
             display: inline-block;
             padding: 15px 30px;
-            background-color: cyan;
+            background: linear-gradient(135deg, #20c997, #0b8457);
             color: #121212;
             text-decoration: none;
             border-radius: 5px;
             font-size: 1.2em;
-            transition: background 0.3s ease, transform 0.2s ease;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
         }
 
         .btn:hover {
-            background-color: #ff8c00;
-            transform: scale(1.05);
+            background: linear-gradient(135deg, #ff8c00, #d65700);
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         }
 
         section {
             padding: 50px 20px;
             text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         #hero {
@@ -99,6 +125,13 @@
             padding: 80px 20px;
             text-align: center;
             border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
         }
 
         #hero h2 {
@@ -130,7 +163,7 @@
             background: linear-gradient(135deg, #f6f5f8, #dadfec);
             padding: 20px;
             text-align: center;
-            color: skyblue;
+            color: #20c997;
         }
 
         h1 {
@@ -476,7 +509,7 @@
                 <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
                 <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
                 <li><a href="{{ url_for('register') }}">Registre</a></li>
-                <li><a href="{{ url_for('home') }}">La meva unitat</a></li>
+                <li><a href="{{ url_for('list_files') }}">La meva unitat</a></li>
             </ul>
             
             <div id="menu">
