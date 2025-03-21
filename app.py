@@ -84,65 +84,73 @@ def rename_file():
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
-    folder_name = request.form.get('folder_name')
-
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
-
-    if folder_name:
-        folder_path = os.path.join(user_folder, secure_filename(folder_name))
-    else:
-        folder_path = user_folder  
-
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
-
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
     if 'file' not in request.files:
-        flash('No file part', 'danger')
-        return redirect(request.referrer)
+        return redirect(request.referrer or url_for('home'))
 
     file = request.files['file']
     if file.filename == '':
-        flash('No selected file', 'danger')
-        return redirect(request.referrer)
+        return redirect(request.referrer or url_for('home'))
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(folder_path, filename)
-    file.save(filepath)
+    parent_folder = request.form.get('parent_folder', '').strip()
+    if not parent_folder:
+        parent_folder = request.args.get('folder', '').strip()
 
-    new_file = File(filename=filename, filepath=filepath, user_id=current_user.id)
-    db.session.add(new_file)
-    db.session.commit()
+    if parent_folder.startswith("/") or ".." in parent_folder:
+        return redirect(request.referrer or url_for('home'))
 
-    if folder_name:
-        return redirect(url_for('list_folder', folder_name=folder_name))
-    return redirect(url_for('list_files'))
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    upload_folder = os.path.normpath(os.path.join(user_folder, parent_folder))
+
+    if not upload_folder.startswith(user_folder):
+        return redirect(request.referrer or url_for('home'))
+
+    os.makedirs(upload_folder, exist_ok=True)
+
+    file_path = os.path.join(upload_folder, file.filename)
+
+    try:
+        file.save(file_path)
+
+        db_file_path = os.path.relpath(file_path, user_folder) 
+        new_file = File(user_id=current_user.id, filepath=db_file_path, filename=file.filename)
+        db.session.add(new_file)
+        db.session.commit()
+
+    except Exception as e:
+        flash(f'Error al pujar arxiu: {str(e)}', 'danger')
+
+    return redirect(request.referrer or url_for('home'))
 
 @app.route('/files')
 @login_required
 def list_files():
-    root_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))  
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
 
-    if not os.path.exists(root_folder):
-        os.makedirs(root_folder)  
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
 
-    user_files = File.query.filter(
-        File.user_id == current_user.id
+    current_folder = request.args.get('folder', '')
+
+    if current_folder:
+        parent_folder = '/'.join(current_folder.split('/')[:-1])  
+    else:
+        parent_folder = ''
+
+    folder_path = os.path.join(user_folder, current_folder)
+
+    files_in_folder = File.query.filter(
+        File.user_id == current_user.id, 
+        ~File.filepath.like('%\\%')       
     ).all()
 
-    filtered_files = [
-        file for file in user_files
-        if os.path.dirname(file.filepath) == root_folder 
-    ]
+    print(files_in_folder)
 
-    folders = [
-        f for f in os.listdir(root_folder)
-        if os.path.isdir(os.path.join(root_folder, f))
+    subfolders = [
+        f for f in os.listdir(folder_path)
+        if os.path.isdir(os.path.join(folder_path, f))
     ]
-
-    return render_template('home.html', files=filtered_files, folders=folders, current_folder=None)
+    
+    return render_template('home.html', files=files_in_folder, folders=subfolders, current_folder=current_folder, parent_folder=parent_folder)
 
 @app.after_request
 def no_cache(response):
@@ -216,7 +224,7 @@ def home():
         if os.path.isdir(os.path.join(user_folder, f)) and not f.startswith('.')
     ]
 
-    return render_template('home.html', files=files, folders=folders, current_folder=None)
+    return render_template('home.html', files=files, folders=folders, current_folder="")
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -305,22 +313,24 @@ def admin_dashboard():
     users = User.query.all()
     return render_template('admin_dashboard.html', users=users)
 
+
 @app.route('/create_folder', methods=['POST'])
 @login_required
 def create_folder():
-    parent_folder = request.form.get('parent_folder', '').strip()  
-    new_folder = request.form.get('new_folder', '').strip()  
+    parent_folder = request.form.get('parent_folder', '').strip() or ""  
+    new_folder = request.form.get('new_folder', '').strip()
+
     if not new_folder:
+        flash("El nombre de la carpeta no puede estar vacío", "danger")
         return redirect(url_for("home"))
 
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
 
-    if parent_folder:
-        folder_path = os.path.join(user_folder, parent_folder, new_folder)
-    else:
-        folder_path = os.path.join(user_folder, new_folder)
+    folder_path = os.path.normpath(os.path.join(user_folder, parent_folder, new_folder))
 
-    folder_path = os.path.normpath(folder_path)
+    if not folder_path.startswith(user_folder):
+        flash("Intento de acceso no autorizado", "danger")
+        return redirect(url_for("home"))
 
     try:
         os.makedirs(folder_path, exist_ok=True)
@@ -328,7 +338,7 @@ def create_folder():
     except Exception as e:
         flash(f'Error al crear la carpeta: {str(e)}', 'danger')
 
-    return redirect(url_for('list_folder', folder_name=parent_folder or new_folder))
+    return redirect(url_for('list_files'))
 
 @app.route("/move_file", methods=["POST"])
 @login_required
@@ -363,31 +373,30 @@ def move_file():
 
     return redirect(url_for("list_folder", folder_name=folder_name))
 
-@app.route("/folder/<path:folder_name>")
+@app.route('/folder/<path:folder_name>')
 @login_required
 def list_folder(folder_name):
-    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
-    folder_path = os.path.join(user_folder, folder_name)
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    folder_path = os.path.normpath(os.path.join(user_folder, folder_name))
 
-    folder_path = os.path.normpath(folder_path)
+    if not folder_path.startswith(user_folder):
+        return redirect(url_for('home'))
 
-    if not os.path.exists(folder_path):  
-        flash("La carpeta no existe", "danger")
-        return redirect(url_for("home"))
+    formatted_folder_name = folder_name.replace("/", "\\") 
+    print(f"Buscando archivos en: {formatted_folder_name}")
 
     files = File.query.filter(
-        File.filepath.startswith(folder_path + os.sep),
-        File.user_id == current_user.id
+        File.user_id == current_user.id,
+        File.filepath.like(f"{formatted_folder_name}\\%"),
+        ~File.filepath.like(f"{formatted_folder_name}\\%\\%")  
     ).all()
 
-    folders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
+    folders = [
+        f for f in os.listdir(folder_path)
+        if os.path.isdir(os.path.join(folder_path, f))
+    ]
 
-    return render_template(
-        "home.html",
-        files=files,
-        folders=folders,
-        current_folder=folder_name if folder_name else "" 
-    )
+    return render_template('home.html', files=files, folders=folders, current_folder=folder_name)
 
 import shutil
 
@@ -397,14 +406,11 @@ def delete_folder():
     folder_name = request.form.get("folder_name", "").strip()
 
     if not folder_name:
-        flash("El nombre de la carpeta no puede estar vacío", "danger")
         return redirect(url_for("list_files"))
 
     folder_path = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id), secure_filename(folder_name))
-    print(f"Intentando eliminar la carpeta: {folder_path}")
 
     if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
-        flash("La carpeta no existe o no es un directorio", "danger")
         return redirect(url_for("list_files"))
 
     try:
@@ -415,7 +421,7 @@ def delete_folder():
     except OSError as e:
         print(f"Error al eliminar la carpeta {folder_path}: {e}")
     except Exception as e:
-        print(f"Error inesperado al eliminar la carpeta {folder_path}: {e}")
+        print(f"Error inesperat al eliminar la carpeta {folder_path}: {e}")
 
     return redirect(url_for("list_files"))
 

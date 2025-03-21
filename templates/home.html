@@ -487,9 +487,9 @@
         </form>
 
         {% if current_folder %}
-            <a href="{{ url_for('list_files') }}">Tornar a la carpeta anterior</a>
+            <a href="{{ url_for('list_files', folder=folder_name) }}">Tornar a la carpeta anterior</a>
         {% endif %}
-    
+        
         {% for file in files %}
             <div>
                 <p>{{ file.filename }}</p>
