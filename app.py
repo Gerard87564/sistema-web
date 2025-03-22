@@ -50,36 +50,38 @@ if not os.path.exists(UPLOAD_FOLDER):
 def rename_file():
     old_name = request.form.get("old_name", "").strip()
     new_name = request.form.get("new_name", "").strip()
-    folder_name = request.form.get('folder_name')
+    folder_name = request.form.get("folder_name", "").strip()
 
     if not old_name or not new_name:
         return jsonify({"error": "Els noms no poden estar buits"}), 400
 
-    old_path = os.path.join(app.config["UPLOAD_FOLDER"],str(current_user.id), folder_name, secure_filename(old_name))
-    new_path = os.path.join(app.config["UPLOAD_FOLDER"],str(current_user.id), folder_name, secure_filename(new_name))
-    print(f"Intentando renombrar: {new_path}") 
-    
-    if not os.path.exists(old_path):
-        return jsonify({"error": "El fitxer o carpeta no existeix"}), 404
+    upload_folder = app.config["UPLOAD_FOLDER"]
+    user_id = str(current_user.id)
+
+    old_path = os.path.normpath(os.path.join(upload_folder, user_id, folder_name, old_name))
+    new_path = os.path.normpath(os.path.join(upload_folder, user_id, folder_name, new_name))
 
     try:
-        os.rename(old_path, new_path) 
+        os.rename(old_path, new_path)
 
-        file_to_update = File.query.filter_by(filename=old_name, filepath=old_path).first()
+        file_to_update = File.query.filter_by(filename=old_name).first()
 
         if file_to_update:
-            file_to_update.filename = new_name 
-            file_to_update.filepath = new_path 
-            db.session.commit() 
+            print(f"Arxiu trobat: {file_to_update.filename}, {file_to_update.filepath}")
+            file_to_update.filename = new_name
+            file_to_update.filepath = os.path.join(folder_name, new_name)
+            db.session.commit()
         else:
-            return jsonify({"error": "No se encontró el archivo en la base de datos"}), 404
+            return jsonify({
+                "error": f"No se encontró archivo con filename={old_name}"
+            }), 404
 
         return redirect(url_for('home'))
 
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Error al renombrar el archivo: {e}"}), 500
-    
+
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -163,10 +165,20 @@ def no_cache(response):
 @login_required
 def download_file(file_id):
     file = File.query.get_or_404(file_id)
+    
     if file.user_id != current_user.id:
-        abort(403) 
-    return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, as_attachment=True)
+        abort(403)  
 
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    file_path = os.path.normpath(os.path.join(user_folder, file.filepath))
+
+    if not os.path.exists(file_path):
+        abort(404)  
+
+    directory = os.path.dirname(file_path)
+    filename = os.path.basename(file_path)
+
+    return send_from_directory(directory, filename, as_attachment=True)
 
 @app.route('/delete/<int:file_id>', methods=['POST'])
 @login_required
@@ -347,7 +359,7 @@ def move_file():
     folder_name = request.form.get("folder_name", "").strip()
 
     if not file_id or not folder_name:
-        flash("Arxiu i carpeta son necessaris", "danger")
+        flash("Arxiu i carpeta són necessaris", "danger")
         return redirect(url_for("list_files"))
 
     file = File.query.get(file_id)
@@ -355,23 +367,35 @@ def move_file():
         flash("Arxiu no trobat o sense permisos", "danger")
         return redirect(url_for("list_files"))
 
-    old_path = file.filepath
-    new_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id), secure_filename(folder_name))
-    new_path = os.path.join(new_folder, secure_filename(file.filename))
+    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
+    old_path = os.path.normpath(os.path.join(user_folder, file.filepath))
+
+    current_folder = os.path.dirname(file.filepath)
+    if current_folder:  
+        new_folder = os.path.normpath(os.path.join(user_folder, current_folder, secure_filename(folder_name)))
+    else:  
+        new_folder = os.path.normpath(os.path.join(user_folder, secure_filename(folder_name)))
+
+    new_path = os.path.normpath(os.path.join(new_folder, secure_filename(file.filename)))
 
     try:
         if not os.path.exists(new_folder):
             os.makedirs(new_folder)
 
         os.rename(old_path, new_path)
-        file.filepath = new_path
+
+        if current_folder:
+            file.filepath = os.path.join(current_folder, folder_name, secure_filename(file.filename))
+        else:
+            file.filepath = os.path.join(folder_name, secure_filename(file.filename))
+
         db.session.commit()
         flash("Arxiu mogut exitosament!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error al mover l'arxiu: {e}", "danger")
+        flash(f"Error al moure l'arxiu: {e}", "danger")
 
-    return redirect(url_for("list_folder", folder_name=folder_name))
+    return redirect(url_for("list_folder", folder_name=os.path.join(current_folder, folder_name)))
 
 @app.route('/folder/<path:folder_name>')
 @login_required
@@ -409,26 +433,45 @@ import shutil
 @login_required
 def delete_folder():
     folder_name = request.form.get("folder_name", "").strip()
+    parent_folder = request.form.get("parent_folder", "").strip()
 
     if not folder_name:
+        flash("El nom de la carpeta és necessari", "danger")
         return redirect(url_for("list_files"))
 
-    folder_path = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id), secure_filename(folder_name))
+    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
+    if parent_folder:
+        folder_path = os.path.normpath(os.path.join(user_folder, parent_folder, secure_filename(folder_name)))
+    else:
+        folder_path = os.path.normpath(os.path.join(user_folder, secure_filename(folder_name)))
 
     if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+        flash("La carpeta no existeix o no es troba", "danger")
         return redirect(url_for("list_files"))
 
     try:
         shutil.rmtree(folder_path)
         print(f"Carpeta eliminada: {folder_path}")
-    except PermissionError as e:
-        print(f"Error de permisos al eliminar la carpeta {folder_path}: {e}")
-    except OSError as e:
-        print(f"Error al eliminar la carpeta {folder_path}: {e}")
-    except Exception as e:
-        print(f"Error inesperat al eliminar la carpeta {folder_path}: {e}")
 
-    return redirect(url_for("list_files"))
+        relative_folder_path = os.path.relpath(folder_path, user_folder)
+        File.query.filter(File.filepath.like(f"{relative_folder_path}%")).delete(synchronize_session=False)
+        db.session.commit()
+
+        flash("Carpeta eliminada correctament!", "success")
+    except PermissionError as e:
+        db.session.rollback()
+        print(f"Error de permisos al eliminar la carpeta {folder_path}: {e}")
+        flash(f"Error de permisos al eliminar la carpeta: {e}", "danger")
+    except OSError as e:
+        db.session.rollback()
+        print(f"Error al eliminar la carpeta {folder_path}: {e}")
+        flash(f"Error al eliminar la carpeta: {e}", "danger")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error inesperat al eliminar la carpeta {folder_path}: {e}")
+        flash(f"Error inesperat: {e}", "danger")
+
+    return redirect(url_for("list_folder", folder_name=parent_folder))
 
 @app.route('/move_to_folder', methods=['POST'])
 @login_required
