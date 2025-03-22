@@ -211,8 +211,8 @@ def delete_file(file_id):
         db.session.rollback()
         flash(f'Error eliminando de la base de datos: {e}', 'danger')
 
-    return redirect(url_for('list_files'))
-
+    return redirect(request.referrer or url_for('home'))
+    
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -471,8 +471,11 @@ def delete_folder():
         print(f"Error inesperat al eliminar la carpeta {folder_path}: {e}")
         flash(f"Error inesperat: {e}", "danger")
 
-    return redirect(url_for("list_folder", folder_name=parent_folder))
-
+    if parent_folder == '':
+        return redirect(url_for("list_files"))
+    else:
+        return redirect(url_for("list_folder", folder_name=parent_folder))
+    
 @app.route('/move_to_folder', methods=['POST'])
 @login_required
 def move_to_folder():
