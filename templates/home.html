@@ -20,11 +20,28 @@
             icon.addEventListener("click", function () {
                 icon.classList.toggle('visible');
             });
+
+            document.getElementById("create-btn").addEventListener("click", function() {
+                const dropdown = document.getElementById("dropdown-menu");
+                dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+            });
         });
 
         function toggleRenameForm(fileId) {
             let form = document.getElementById("rename-form-" + fileId);
             form.style.display = (form.style.display === "none") ? "block" : "none";
+        }
+
+        function toggleCreateFileForm() {
+            const form = document.getElementById("create-file-form");
+            form.style.display = form.style.display === "none" ? "block" : "none";
+            document.getElementById("create-folder-form").style.display = "none"; 
+        }
+
+        function toggleCreateFolderForm() {
+            const form = document.getElementById("create-folder-form");
+            form.style.display = form.style.display === "none" ? "block" : "none";
+            document.getElementById("create-file-form").style.display = "none"; 
         }
     </script>
     <style>
@@ -45,15 +62,16 @@
         }
 
         header {
-            background: linear-gradient(135deg, #f6f5f8, #dadfec);
+            background: linear-gradient(135deg, #fccd75, #70ddb9);
             padding: 20px;
             text-align: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease;
+            color: black;
         }
 
         header h1 {
-            color: #20c997;
+            color: black;
         }
 
         header:hover {
@@ -74,7 +92,7 @@
         }
 
         nav a {
-            color: #20c997;
+            color: black;
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
@@ -127,6 +145,10 @@
         .files div:hover, .folders div:hover {
             transform: scale(1.05);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        #create-btn {
+            color: black;
         }
 
         .files button, .folders button {
@@ -245,14 +267,86 @@
             outline: none;
         }
 
+        .create-btn {
+            background: linear-gradient(135deg, #20c997, #0b8457);
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        #create-btn:hover {
+            background: linear-gradient(135deg, #ff8c00, #d65700);
+            transform: scale(1.1);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: relative;
+            top: 1em;
+            left: 0;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown-item {
+            background-color: #f6f5f8;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .dropdown-item:hover {
+            background-color: #20c997;
+            color: #fff;
+        }
+
+        .form-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .form-container input {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 80%;
+            font-size: 1em;
+        }
+
+        .form-container button {
+            padding: 10px 20px;
+            background: #20c997;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .form-container button:hover {
+            background: #ff8c00;
+            transform: scale(1.1);
+        }
+
         footer {
             position: relative;
-            top: 10em;
+            top: 20em;
             margin-top: auto;
-            background: linear-gradient(135deg, #f6f5f8, #dadfec);
+            background: linear-gradient(135deg, #fccd75, #70ddb9);
             padding: 20px;
             text-align: center;
-            color: skyblue;
+            color: black;
         }
 
         h1 {
@@ -600,7 +694,7 @@
                 <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
                 <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
                 <li><a href="{{ url_for('register') }}">Registre</a></li>
-                <li><a href="{{ url_for('home') }}">La meva unitat</a></li>
+                <li><a href="{{ url_for('list_files') }}">La meva unitat</a></li>
             </ul>
             
             <div id="menu">
@@ -610,22 +704,8 @@
     </header>
 
     <section class="files">
-        <form action="{{ url_for('upload_file', folder=current_folder) }}" method="post" enctype="multipart/form-data">
-            {% if current_folder %}
-                <input type="hidden" name="folder_name" value="{{ current_folder }}">
-            {% endif %}
-            <input type="file" name="file" required>
-            <button type="submit">Pujar arxiu</button>
-        </form>        
-    </section>
-
-    <section class="files">
-        <form action="{{ url_for('create_folder') }}" method="POST">
-            <input type="hidden" name="parent_folder" value="{{ current_folder }}">
-            <input type="text" name="new_folder" placeholder="Nombre de la nueva carpeta" required>
-            <button type="submit">Crear Carpeta</button>
-        </form>
-
+        <button id="create-btn" class="btn">Crear</button>
+        
         {% if current_folder %}
             {% if parent_folder %}
                 <a href="{{ url_for('list_folder', folder_name=parent_folder) }}">Tornar a la carpeta anterior</a>
@@ -633,20 +713,45 @@
                 <a href="{{ url_for('list_files') }}">Tornar a la meva unitat</a>
             {% endif %}
         {% endif %}
-                
+
+        <div id="dropdown-menu" class="dropdown-menu">
+            <button class="dropdown-item" onclick="toggleCreateFileForm()">Pujar Arxiu</button>
+            <button class="dropdown-item" onclick="toggleCreateFolderForm()">Crear Carpeta</button>
+        </div>
+    
+        <div id="create-file-form" class="form-container" style="display: none;">
+            <form action="{{ url_for('upload_file', folder=current_folder) }}" method="post" enctype="multipart/form-data">
+                {% if current_folder %}
+                    <input type="hidden" name="folder_name" value="{{ current_folder }}">
+                {% endif %}
+                <input type="file" name="file" required>
+                <button type="submit">Pujar arxiu</button>
+            </form>
+            <button onclick="toggleCreateFileForm()">Cancelar</button>
+        </div>
+    
+        <div id="create-folder-form" class="form-container" style="display: none;">
+            <form action="{{ url_for('create_folder') }}" method="POST">
+                <input type="hidden" name="parent_folder" value="{{ current_folder }}">
+                <input type="text" name="new_folder" placeholder="Nombre de la nueva carpeta" required>
+                <button type="submit">Crear Carpeta</button>
+            </form>
+            <button onclick="toggleCreateFolderForm()">Cancelar</button>
+        </div>
+    
         {% for file in files %}
             <div>
                 <p>{{ file.filename }}</p>
                 <a href="{{ url_for('download_file', file_id=file.id) }}">Descargar</a>
     
                 <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}" style="display:inline;">
-                    <button type="submit" onclick="return confirm('¿Eliminar arxiu?');">Eliminar</button>
+                    <button type="submit" onclick="return confirm('¿Eliminar archivo?');">Eliminar</button>
                 </form>
     
-                <button onclick="toggleRenameForm('{{ file.id }}')">Canviar Nom</button>
+                <button onclick="toggleRenameForm('{{ file.id }}')">Cambiar Nom</button>
                 <form action="{{ url_for('rename_file', folder=current_folder) }}" method="post" style="display:none;" id="rename-form-{{ file.id }}">
                     <input type="hidden" name="old_name" value="{{ file.filename }}">
-                    <input type="text" name="new_name" placeholder="Nou nom" required>
+                    <input type="text" name="new_name" placeholder="Nuevo nombre" required>
                     {% if current_folder %}
                         <input type="hidden" name="folder_name" value="{{ current_folder }}">
                     {% endif %}
@@ -660,12 +765,12 @@
                             <option value="{{ folder }}">{{ folder }}</option>
                         {% endfor %}
                     </select>
-                    <button type="submit">Moure</button>
+                    <button type="submit">Moure fitxer</button>
                 </form>
             </div>
         {% endfor %}
-    </section>  
-
+    </section>
+    
     <section class="folders">
         {% if folders %}
             <h3>Carpetes</h3>
@@ -679,18 +784,18 @@
                         {% endif %}
                         <button type="submit" onclick="return confirm('¿Eliminar carpeta?');">Eliminar</button>
                     </form>
-
+    
                     <form action="{{ url_for('move_to_folder') }}" method="POST" style="display:inline;">
                         <input type="hidden" name="folder_name" value="{{ folder }}">
                         <input type="hidden" name="current_folder" value="{{ current_folder }}">
-                        <button type="submit">Entra a la carpeta</button>
+                        <button type="submit">Entrar a la carpeta</button>
                     </form>                    
                 </div>
             {% endfor %}
         {% else %}
             <p>No hi ha carpetes disponibles.</p>
         {% endif %}
-    </section>    
+    </section>  
 
     <footer>
         <p>&copy; 2025 SkyVault. All Rights Reserved.</p>
