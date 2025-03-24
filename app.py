@@ -230,7 +230,7 @@ def home():
         ~File.filepath.like(f"{user_folder}/%/%"),  
         File.user_id == current_user.id
     ).all()
-
+    
     folders = [
         f for f in os.listdir(user_folder)
         if os.path.isdir(os.path.join(user_folder, f)) and not f.startswith('.')
