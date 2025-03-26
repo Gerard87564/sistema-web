@@ -12,6 +12,13 @@ body {
     min-height: 100vh;
 }
 
+#logoImg {
+    width: 10em;
+    position: absolute;
+    top: 0em;
+    left: 3em;
+}
+
 main {
     flex: 1;
     z-index: 2;
@@ -420,6 +427,12 @@ h1 {
     h1 {
         font-size: 20px;
     }
+
+    #logoImg {
+        width: 5em;
+        left: 18em;
+        top: 2em;
+    }
 }
 
 @media only screen and (min-width: 451px) and (max-width: 480px) {
@@ -530,6 +543,12 @@ h1 {
 
     h1 {
         font-size: 20px;
+    }
+
+    #logoImg {
+        width: 7em;
+        left: 20em;
+        top: 2em;
     }
 }
 
@@ -642,6 +661,12 @@ h1 {
     h1 {
         font-size: 20px;
     }
+
+    #logoImg {
+        width: 7em;
+        left: 20em;
+        top: 2em;
+    }
 }
 
 @media only screen and (min-width: 573px) and (max-width: 651px) {
@@ -751,6 +776,12 @@ h1 {
     h1 {
         font-size: 20px;
     }
+
+    #logoImg {
+        width: 8em;
+        left: 24em;
+        top: 1.5em;
+    }
 }
 
 @media only screen and (min-width: 652px) and (max-width: 740px) {
@@ -859,6 +890,12 @@ h1 {
 
     h1 {
         font-size: 20px;
+    }
+
+    #logoImg {
+        width: 8em;
+        left: 28em;
+        top: 1.5em;
     }
 }
 
