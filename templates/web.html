@@ -68,11 +68,66 @@
 
         <section id="about">
             <h2>¿Qué es SkyVault?</h2>
+            <section id="slider">
+                <div id="menus">
+                    <div class="menu-contenidor">
+                        <img id="img1" src="{{ url_for('static', filename='images/Cloud-Computing-1.jpg') }}" alt="img">
+                    </div>
+    
+                    <div class="menu-contenidor">
+                        <img id="img2" src="{{ url_for('static', filename='images/YT-Cloud-Computing-2.png') }}" alt="img">
+                    </div>
+                </div>
+                <nav class="gallery-navigation">
+                    <button class="nav-button prev-button">&larr;</button>
+                    <button class="nav-button next-button">&rarr;</button>
+                </nav>
+            </section>
             <p>SkyVault és una plataforma d'emmagatzematge al núvol que et permet pujar, organitzar i accedir als teus fitxers de manera segura des de qualsevol lloc. Amb un disseny intuïtiu i funcions avançades, SkyVault és la solució perfecta per als que busquen un espai fiable per als seus documents i fitxers digitals.</p>
         </section>
     </main>
     <footer>
         <p>&copy; 2025 SkyVault. All Rights Reserved.</p>
     </footer>
+    <script>
+        let currentIndex = 0;
+
+        document.querySelector('.prev-button').addEventListener('click', () => {
+            navigate(-1);
+        });
+
+        document.querySelector('.next-button').addEventListener('click', () => {
+            navigate(1);
+        });
+
+        function navigate(direction) {
+            const galleryContainer = document.querySelector('#menus');
+            const totalImages = document.querySelectorAll('.menu-contenidor').length;
+
+            currentIndex = (currentIndex + direction + totalImages) % totalImages;
+            const offset = -currentIndex * 100;
+
+            galleryContainer.style.transform = `translateX(${offset}%)`;
+        }
+
+        let autoplayInterval = null;
+
+        function startAutoplay(interval) {
+        stopAutoplay(); 
+        autoplayInterval = setInterval(() => {
+            navigate(1);
+        }, interval);
+        }
+
+        function stopAutoplay() {
+        clearInterval(autoplayInterval);
+        }
+
+        startAutoplay(3000);
+
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', stopAutoplay);
+        });
+    </script>
 </body>
 </html>
