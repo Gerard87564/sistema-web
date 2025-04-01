@@ -58,6 +58,7 @@
                 <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
                 <li><a href="{{ url_for('register') }}">Registre</a></li>
                 <li><a href="{{ url_for('list_files') }}">La meva unitat</a></li>
+                <li><a href="{{ url_for('shared_files') }}">Compartit amb mi</a></li>
             </ul>
             
             <div id="menu">
@@ -119,6 +120,11 @@
                             <input type="hidden" name="folder_name" value="{{ current_folder }}">
                         {% endif %}
                         <button type="submit">Confirmar</button>
+                    </form>
+
+                    <form action="{{ url_for('share_file', file_id=file.id) }}" method="POST">
+                        <input type="text" name="shared_with" placeholder="Nombre de usuario" required>
+                        <button type="submit">Compartir</button>
                     </form>
         
                     <form action="{{ url_for('move_file') }}" method="POST">

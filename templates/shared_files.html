@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyVault</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/minimalist_logo_for_SkyVault__a_cloud_file_storage_company_similar_to_Google_Drive-removebg-preview.ico') }}" type="image/x-icon">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/shared.css') }}" type="text/css">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menu= document.getElementById('menu');
+            const htopnav = document.getElementById('htopnav');
+            const icon= document.getElementById('bar');
+
+            menu.addEventListener("click", function () {
+                icon.classList.toggle('animate');
+                htopnav.classList.toggle('visible');
+            }); 
+
+            icon.addEventListener("click", function () {
+                icon.classList.toggle('visible');
+            });
+
+            const moreInfoBtn = document.getElementById('more-info-btn');
+            const aboutSection = document.getElementById('about');
+
+            moreInfoBtn.addEventListener("click", function () {
+                aboutSection.classList.toggle('visible');
+            });
+        });
+
+        function toggleRenameForm(fileId) {
+            let form = document.getElementById("rename-form-" + fileId);
+            form.style.display = (form.style.display === "none") ? "block" : "none";
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <img id="logoImg" src="{{ url_for('static', filename='images/minimalist_logo_for_SkyVault__a_cloud_file_storage_company_similar_to_Google_Drive-removebg-preview.png') }}" alt="logo">
+        <h1>SkyVault</h1>
+        <nav class="col-12 col-lg-12 col-dm-12 col-sm-12">
+            <ul id="htopnav">
+                <li><a href="{{ url_for('web') }}">Inici</a></li>
+                <li><a href="{{ url_for('logout') }}">Tanca la sessió</a></li>
+                <li><a href="{{ url_for('login') }}">Iniciar Sessió</a></li>
+                <li><a href="{{ url_for('register') }}">Registre</a></li>
+                <li><a href="{{ url_for('list_files') }}">La meva unitat</a></li>
+                <li><a href="{{ url_for('shared_files') }}">Compartit amb mi</a></li>
+            </ul>
+            
+            <div id="menu">
+                <div id="bar"></div>
+            </div> 
+        </nav>
+    </header>
+    <main>
+        <section class="files">        
+            <h2>Arxius compartits amb tu</h2>
+        
+            {% if shared_files %}
+                {% for shared_file, file in shared_files %}
+                <div>
+                    <p>{{ file.filename }}</p>  
+                    <a href="{{ url_for('download_shared_file', file_id=shared_file.id) }}">Descargar</a>                               
+                </div>
+            {% endfor %}
+            {% else %}
+                <p>No tens arxius compartits.</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 SkyVault. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>

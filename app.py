@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
+from flask import abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
@@ -38,6 +39,16 @@ class File(db.Model):
 
     user = db.relationship('User', backref=db.backref('files', lazy=True))
     
+class SharedFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('file.id'), nullable=False)
+    shared_with_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    shared_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    file = db.relationship('File', backref=db.backref('shared_files', lazy=True))
+    shared_with = db.relationship('User', foreign_keys=[shared_with_id])
+    shared_by = db.relationship('User', foreign_keys=[shared_by_id])
 
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -491,6 +502,66 @@ def move_to_folder():
 
     return redirect(url_for("list_folder", folder_name=full_path))
 
+@app.route('/share/<int:file_id>', methods=['POST'])
+@login_required
+def share_file(file_id):
+    file = File.query.get_or_404(file_id)
+
+    if file.user_id != current_user.id:
+        return redirect(url_for('home'))
+
+    shared_with_username = request.form.get("shared_with", "").strip().lower()
+    shared_with_user = User.query.filter_by(username=shared_with_username).first()
+
+    if not shared_with_user or shared_with_user.id == current_user.id:
+        return redirect(url_for('home'))
+
+    already_shared = SharedFile.query.filter_by(file_id=file.id, shared_with_id=shared_with_user.id).first()
+    if already_shared:
+        return redirect(url_for('home'))
+
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(shared_with_user.id))
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
+
+    original_file_path = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id), file.filepath)
+    copied_file_path = os.path.join(user_folder, os.path.basename(file.filename))
+
+    try:
+        shutil.copy(original_file_path, copied_file_path)
+
+        shared_file = SharedFile(file_id=file.id, shared_with_id=shared_with_user.id, shared_by_id=current_user.id)
+        db.session.add(shared_file)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+
+    return redirect(request.referrer or url_for('home'))
+
+@app.route('/shared_files')
+@login_required
+def shared_files():
+    shared_files = db.session.query(SharedFile, File).join(File).filter(SharedFile.shared_with_id == current_user.id).all()
+    
+    return render_template('shared_files.html', shared_files=shared_files)
+
+@app.route('/download_shared_file/<int:file_id>')
+@login_required
+def download_shared_file(file_id):
+    shared_file = SharedFile.query.get_or_404(file_id)
+
+    if shared_file.shared_with_id != current_user.id:
+        abort(403)  
+
+    shared_file_record = File.query.get_or_404(shared_file.file_id)
+
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    file_path = os.path.join(user_folder, os.path.basename(shared_file_record.filename))  # Usa la copia en la carpeta del usuario
+
+    if not os.path.exists(file_path):
+        abort(404)
+
+    return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), as_attachment=True)
 
 @app.route('/')
 def ruta():
