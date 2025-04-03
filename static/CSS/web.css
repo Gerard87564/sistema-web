@@ -2,7 +2,7 @@ body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(-45deg, #E3F2FD, #BBDEFB, #90CAF9, #64B5F6);
+    background: linear-gradient(-45deg, #0331BC, #035AA6, #177FBF, #2BA8D9);
     background-size: 400% 400%;
     animation: gradientBG 12s ease infinite;
     color: #333333;
