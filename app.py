@@ -50,11 +50,8 @@ class SharedFile(db.Model):
     shared_with = db.relationship('User', foreign_keys=[shared_with_id])
     shared_by = db.relationship('User', foreign_keys=[shared_by_id])
 
-if os.environ.get("RENDER"):
-    UPLOAD_FOLDER = '/mnt/data/uploads'
-else:
-    UPLOAD_FOLDER = 'uploads'
-    
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
