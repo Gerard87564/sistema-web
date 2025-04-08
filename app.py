@@ -88,7 +88,7 @@ def rename_file():
                 "error": f"No se encontró archivo con filename={old_name}"
             }), 404
 
-        return redirect(url_for('home'))
+        return redirect(request.referrer or url_for('home'))
 
     except Exception as e:
         db.session.rollback()
