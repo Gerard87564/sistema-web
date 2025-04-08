@@ -50,12 +50,15 @@ class SharedFile(db.Model):
     shared_with = db.relationship('User', foreign_keys=[shared_with_id])
     shared_by = db.relationship('User', foreign_keys=[shared_by_id])
 
-UPLOAD_FOLDER = 'uploads'
+if os.environ.get("RENDER"):
+    UPLOAD_FOLDER = '/mnt/data/uploads'
+else:
+    UPLOAD_FOLDER = 'uploads'
+    
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
-
 
 @app.route("/rename", methods=["POST"])
 def rename_file():
