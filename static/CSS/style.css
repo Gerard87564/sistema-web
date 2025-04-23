@@ -131,7 +131,7 @@ section {
 }
 
 .files button, .folders button {
-    background: linear-gradient(135deg, #DADFEC, #C6D6EB);
+    background-color: #185abc;
     border: none;
     color: #FFFFFF; 
     padding: 10px 15px; 
@@ -141,7 +141,7 @@ section {
     transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.files button:hover, .folders button:hover {
+#dropdown-menu button:hover, .folders button:hover {
     background: linear-gradient(135deg, #ff8c00, #d65700);
     transform: scale(1.15); 
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); 
@@ -225,19 +225,29 @@ section {
     outline: none;
 }
 
-.create-btn {
+#create-btn {
+    position: relative;
+    right: 55em;
     background: linear-gradient(135deg, #DADFEC, #C6D6EB);
-    color: #fff;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.2em;
-    transition: background 0.3s ease, transform 0.2s ease;
 }
 
 #create-btn:hover {
-    background: linear-gradient(135deg, #ff8c00, #d65700);
+    transform: scale(1.1);
+}
+
+#create-btn .plus {
+    font-size: 48px;
+    font-weight: 900;
+    background: linear-gradient(45deg, #4285F4, #EA4335, #FBBC05);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    transition: transform 0.3s ease;
+}
+
+#create-btn:hover .plus {
     transform: scale(1.1);
 }
 
@@ -283,7 +293,7 @@ section {
 
 .form-container button {
     padding: 10px 20px;
-    background: linear-gradient(135deg, #DADFEC, #C6D6EB);
+    background-color: #185abc;
     border: none;
     color: #fff;
     border-radius: 5px;
@@ -433,6 +443,10 @@ h1 {
         left: 18em;
         top: 2em;
     }
+
+    #create-btn {
+        right: 9em;
+    }
 }
 
 @media only screen and (min-width: 451px) and (max-width: 480px) {
@@ -549,6 +563,10 @@ h1 {
         width: 7em;
         left: 20em;
         top: 2em;
+    }
+
+    #create-btn {
+        right: 11em;
     }
 }
 
@@ -667,6 +685,10 @@ h1 {
         left: 20em;
         top: 2em;
     }
+
+    #create-btn {
+        right: 12em;
+    }
 }
 
 @media only screen and (min-width: 573px) and (max-width: 651px) {
@@ -781,6 +803,10 @@ h1 {
         width: 8em;
         left: 24em;
         top: 1.5em;
+    }
+
+    #create-btn {
+        right: 15em;
     }
 }
 
@@ -897,6 +923,10 @@ h1 {
         left: 28em;
         top: 1.5em;
     }
+
+    #create-btn {
+        right: 17em;
+    }
 }
 
 @media only screen and (min-width: 741px) and (max-width: 900px) {
@@ -913,5 +943,31 @@ h1 {
     .col-dm-11 {width: 91.66%;}
     .col-dm-12 {
         width: 100%;
+    }
+
+    #create-btn {
+        right: 20em;
+    }
+}
+
+
+@media only screen and (min-width: 901px) and (max-width: 1280px) {
+    .col-dm-1 {width: 8.33%;}
+    .col-dm-2 {width: 16.66%;}
+    .col-dm-3 {width: 25%;}
+    .col-dm-4 {width: 33.33%;}
+    .col-dm-5 {width: 41.66%;}
+    .col-dm-6 {width: 50%;}
+    .col-dm-7 {width: 58.33%;}
+    .col-dm-8 {width: 66.66%;}
+    .col-dm-9 {width: 75%;}
+    .col-dm-10 {width: 83.33%;}
+    .col-dm-11 {width: 91.66%;}
+    .col-dm-12 {
+        width: 100%;
+    }
+
+    #create-btn {
+        right: 25em;
     }
 }
