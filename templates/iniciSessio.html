@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #e9ecef;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             display: flex;
@@ -19,7 +19,8 @@
         }
 
         h2 {
-            color: #343a40;
+            color: #333;
+            margin-bottom: 20px;
         }
 
         form {
@@ -30,18 +31,33 @@
             display: flex;
             flex-direction: column;
             width: 320px;
+            align-items: center;
         }
 
-        input[type="text"],
-        input[type="password"] {
+        label {
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+            text-align: left;
+            width: 100%;
+        }
+
+        .form-control {
             margin-bottom: 15px;
             padding: 12px;
+            width: 100%;
             border: 1px solid #ced4da;
             border-radius: 5px;
             font-size: 16px;
+            box-sizing: border-box;
         }
 
-        button {
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        .btn {
             background-color: #007bff;
             color: #fff;
             border: none;
@@ -49,9 +65,11 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            width: 100%;
+            text-align: center;
         }
 
-        button:hover {
+        .btn:hover {
             background-color: #0056b3;
         }
 
@@ -92,12 +110,15 @@
         </ul>
     {% endif %}
     {% endwith %}
-    
+
     <h2>Inicia sessió</h2>
     <form method="POST">
-        <input type="text" name="username" placeholder="Nom d'usuari" required>
-        <input type="password" name="password" placeholder="Contrasenya" required>
-        <button type="submit">Iniciar sessió</button>
+        {{ form.hidden_tag() }}
+        <label for="{{ form.username.id }}">{{ form.username.label }}</label>
+        {{ form.username(class="form-control") }} <br>
+        <label for="{{ form.password.id }}">{{ form.password.label }}</label>
+        {{ form.password(class="form-control") }} <br>
+        {{ form.submit(class="btn") }}
     </form>
     <a href="{{ url_for('register') }}">Encara no tens compte? Registra't aquí</a>
 </body>

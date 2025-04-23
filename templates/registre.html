@@ -20,6 +20,7 @@
 
         h2 {
             color: #333;
+            margin-bottom: 20px;
         }
 
         form {
@@ -29,29 +30,46 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            width: 300px;
+            width: 320px;
+            align-items: center;
         }
 
-        input[type="text"],
-        input[type="password"] {
+        label {
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+            text-align: left;
+            width: 100%;
+        }
+
+        .form-control {
             margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #ccc;
+            padding: 12px;
+            width: 100%;
+            border: 1px solid #ced4da;
             border-radius: 5px;
             font-size: 16px;
+            box-sizing: border-box;
         }
 
-        button {
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        .btn {
             background-color: #28a745;
             color: #fff;
             border: none;
-            padding: 10px;
+            padding: 12px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            width: 100%;
+            text-align: center;
         }
 
-        button:hover {
+        .btn:hover {
             background-color: #218838;
         }
 
@@ -93,13 +111,19 @@
     {% endif %}
     {% endwith %}
 
-
-    
     <h2>Registre d'usuari</h2>
     <form method="POST">
-        <input type="text" name="username" placeholder="Nom d'usuari" required>
-        <input type="password" name="password" placeholder="Contrasenya" required>
-        <button type="submit">Registrarse</button>
+        {{ form.hidden_tag() }}
+        <label for="{{ form.username.id }}">{{ form.username.label }}</label>
+        {{ form.username(class="form-control") }} <br>
+        
+        <label for="{{ form.password.id }}">{{ form.password.label }}</label>
+        {{ form.password(class="form-control") }} <br>
+        
+        <label for="{{ form.confirm_password.id }}">{{ form.confirm_password.label }}</label>
+        {{ form.confirm_password(class="form-control") }} <br>
+        
+        {{ form.submit(class="btn") }}
     </form>
     <a href="{{ url_for('login') }}">Ja tens un compte? Inicia sessió aquí</a>
 </body>

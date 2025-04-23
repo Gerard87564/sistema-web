@@ -9,11 +9,21 @@ import os
 from werkzeug.utils import secure_filename
 from flask import send_file
 from flask import send_from_directory
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import InputRequired, Length, EqualTo
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sistema_web.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'gerard98065'
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -50,6 +60,17 @@ class SharedFile(db.Model):
     shared_with = db.relationship('User', foreign_keys=[shared_with_id])
     shared_by = db.relationship('User', foreign_keys=[shared_by_id])
 
+class LoginForm(FlaskForm):
+    username = StringField('Usuari', validators=[InputRequired(), Length(min=4, max=25)])
+    password = PasswordField('Contrasenya', validators=[InputRequired()])
+    submit = SubmitField('Iniciar Sessió')
+
+class RegisterForm(FlaskForm):
+    username = StringField('Usuari', validators=[InputRequired(), Length(min=4, max=25)])
+    password = PasswordField('Contrasenya', validators=[InputRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirma la contrasenya', validators=[InputRequired(), EqualTo('password')])
+    submit = SubmitField('Registrar-se')
+
 is_production = os.environ.get("RENDER") is not None
 
 UPLOAD_FOLDER = "/tmp/uploads" if is_production else os.path.join(os.getcwd(), "uploads")
@@ -57,6 +78,10 @@ UPLOAD_FOLDER = "/tmp/uploads" if is_production else os.path.join(os.getcwd(), "
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route("/rename", methods=["POST"])
 def rename_file():
@@ -250,44 +275,45 @@ def home():
 
     return render_template('home.html', files=files, folders=folders, current_folder="")
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username'].lower()
-        password = request.form['password']
-
+    form = RegisterForm()
+    if form.validate_on_submit():
+        username = form.username.data.lower()
+        password = form.password.data
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
+        
         try:
             new_user = User(username=username, password=hashed_password)
             db.session.add(new_user)
             db.session.commit()
-            flash('¡Usuario registrat amb exit!', 'successR')
-            return redirect(url_for('login'))  
+            flash('¡Usuari registrat amb èxit!', 'success')
+            return redirect(url_for('login'))
 
         except IntegrityError:
-            db.session.rollback()  
-            flash('Aquest nom de usuari ja está registrat. Escull un altre...', 'errorR')
-            return redirect(url_for('register'))  
-        
-    return render_template('registre.html')
+            db.session.rollback()
+            flash('Aquest usuari ja existeix.', 'danger')
+    return render_template('registre.html', form=form)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username'].lower()
-        password = request.form['password']
+    form = LoginForm()
+
+    if form.validate_on_submit(): 
+        username = form.username.data.lower()
+        password = form.password.data
         user = User.query.filter_by(username=username).first()
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
-            flash("Sessió iniciada correctament!", "successL")
+            print("Sessió iniciada correctament!")
             return redirect(url_for('web'))
         else:
             flash("Credencials incorrectes!", "errorL")
             return redirect(url_for('login'))
         
-    return render_template('iniciSessio.html')
+    return render_template('iniciSessio.html', form=form)
 
 @app.route('/web')
 @login_required
@@ -305,7 +331,7 @@ def verify_login():
 @login_required
 def logout():
     logout_user()
-    flash("Sessió tancada correctament!", "success")
+    flash("Sessió tancada correctament.", "info")
     return redirect(url_for('login'))
 
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
