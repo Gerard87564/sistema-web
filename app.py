@@ -15,7 +15,6 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, EqualTo
 
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sistema_web.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -48,6 +47,13 @@ class File(db.Model):
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     user = db.relationship('User', backref=db.backref('files', lazy=True))
+
+class Folder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    path = db.Column(db.String(255), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('folders', lazy=True))
     
 class SharedFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -84,6 +90,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 @app.route("/rename", methods=["POST"])
+@login_required
 def rename_file():
     old_name = request.form.get("old_name", "").strip()
     new_name = request.form.get("new_name", "").strip()
@@ -92,16 +99,16 @@ def rename_file():
     if not old_name or not new_name:
         return jsonify({"error": "Els noms no poden estar buits"}), 400
 
-    upload_folder = app.config["UPLOAD_FOLDER"]
+    ftp = connect_ftp()
     user_id = str(current_user.id)
-
-    old_path = os.path.normpath(os.path.join(upload_folder, user_id, folder_name, old_name))
-    new_path = os.path.normpath(os.path.join(upload_folder, user_id, folder_name, new_name))
+    folder_path = f"/{user_id}/{folder_name}".strip("/")
 
     try:
-        os.rename(old_path, new_path)
+        ftp.cwd(f"/{folder_path}")
 
-        file_to_update = File.query.filter_by(filename=old_name).first()
+        ftp.rename(old_name, new_name)
+
+        file_to_update = File.query.filter_by(user_id=current_user.id, filename=old_name).first()
 
         if file_to_update:
             print(f"Arxiu trobat: {file_to_update.filename}, {file_to_update.filepath}")
@@ -113,13 +120,17 @@ def rename_file():
                 "error": f"No se encontró archivo con filename={old_name}"
             }), 404
 
+        flash("Archivo renombrado correctamente", "success")
         return redirect(request.referrer or url_for('home'))
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Error al renombrar el archivo: {e}"}), 500
+        print(f"Error al renombrar el archivo en el FTP: {e}")
+        return redirect(request.referrer or url_for('home'))
 
-
+    finally:
+        ftp.quit()
+    
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
@@ -130,66 +141,85 @@ def upload_file():
     if file.filename == '':
         return redirect(request.referrer or url_for('home'))
 
-    parent_folder = request.form.get('parent_folder', '').strip()
-    if not parent_folder:
-        parent_folder = request.args.get('folder', '').strip()
-
-    if parent_folder.startswith("/") or ".." in parent_folder:
-        return redirect(request.referrer or url_for('home'))
-
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
-    upload_folder = os.path.normpath(os.path.join(user_folder, parent_folder))
-
-    if not upload_folder.startswith(user_folder):
-        return redirect(request.referrer or url_for('home'))
-
-    os.makedirs(upload_folder, exist_ok=True)
-
-    file_path = os.path.join(upload_folder, file.filename)
-
+    current_folder = request.form.get('folder', '').strip()  
+    ftp = connect_ftp()
     try:
-        file.save(file_path)
+        full_path = f"/{current_user.id}/{current_folder}".strip("/")
 
-        db_file_path = os.path.relpath(file_path, user_folder) 
-        new_file = File(user_id=current_user.id, filepath=db_file_path, filename=file.filename)
+        for part in full_path.split("/"):
+            try:
+                ftp.mkd(part)
+            except:
+                pass
+            ftp.cwd(part)
+
+        ftp.storbinary(f"STOR {file.filename}", file.stream)
+
+        relative_path = f"{current_folder}/{file.filename}" if current_folder else file.filename
+        relative_path = relative_path.strip("/")
+
+        new_file = File(user_id=current_user.id, filepath=relative_path, filename=file.filename)
         db.session.add(new_file)
         db.session.commit()
 
     except Exception as e:
-        flash(f'Error al pujar arxiu: {str(e)}', 'danger')
+        print(f"Error pujant arxiu al FTP: {e}")
+    finally:
+        ftp.quit()
 
-    return redirect(request.referrer or url_for('home'))
+    return redirect(request.referrer or url_for('list_files'))
+
+from ftplib import error_perm
 
 @app.route('/files')
 @login_required
 def list_files():
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    current_folder = request.args.get('folder', '').strip()
+    parent_folder = '/'.join(current_folder.split('/')[:-1]) if current_folder else ''
 
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
+    ftp = connect_ftp()
+    user_folder = f"/{current_user.id}/{current_folder}".strip("/")
 
-    current_folder = request.args.get('folder', '')
+    try:
+        ftp.cwd(f"/{user_folder}")
+    except error_perm:
+        flash("La carpeta no existe en el FTP", "warning")
+        ftp.quit()
+        return redirect(url_for('home'))
 
-    if current_folder:
-        parent_folder = '/'.join(current_folder.split('/')[:-1])  
-    else:
-        parent_folder = ''
+    files_in_folder = []
+    subfolders = []
 
-    folder_path = os.path.join(user_folder, current_folder)
+    try:
+        entries = []
+        ftp.retrlines('LIST', entries.append)
 
-    files_in_folder = File.query.filter(
-        File.user_id == current_user.id, 
-        ~File.filepath.like('%\\%')       
-    ).all()
+        for entry in entries:
+            parts = entry.split()
+            if len(parts) < 9:
+                continue  
+            name = parts[-1]
+            is_dir = entry.startswith('d') 
 
-    print(files_in_folder)
+            if is_dir:
+                subfolders.append(name)
+            else:
+                file = File.query.filter_by(user_id=current_user.id, filename=name).first()
+                if file:
+                    files_in_folder.append(file)
 
-    subfolders = [
-        f for f in os.listdir(folder_path)
-        if os.path.isdir(os.path.join(folder_path, f))
-    ]
-    
-    return render_template('home.html', files=files_in_folder, folders=subfolders, current_folder=current_folder, parent_folder=parent_folder)
+    except Exception as e:
+        flash(f"Error al listar archivos: {e}", "danger")
+
+    ftp.quit()
+
+    return render_template(
+        'home.html',
+        files=files_in_folder,
+        folders=subfolders,
+        current_folder=current_folder,
+        parent_folder=parent_folder
+    )
 
 @app.after_request
 def no_cache(response):
@@ -198,46 +228,71 @@ def no_cache(response):
     response.headers['Expires'] = '0'
     return response
 
+import tempfile
+from flask import after_this_request
+
 @app.route('/download/<int:file_id>')
 @login_required
 def download_file(file_id):
     file = File.query.get_or_404(file_id)
-    
+
     if file.user_id != current_user.id:
-        abort(403)  
+        abort(403)
 
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
-    file_path = os.path.normpath(os.path.join(user_folder, file.filepath))
+    ftp = connect_ftp()
+    user_folder = f"/{current_user.id}"
+    local_dir = tempfile.mkdtemp()
+    local_path = os.path.join(local_dir, secure_filename(file.filename))
 
-    if not os.path.exists(file_path):
-        abort(404)  
+    try:
+        ftp.cwd(user_folder)
 
-    directory = os.path.dirname(file_path)
-    filename = os.path.basename(file_path)
+        if "/" in file.filepath:
+            subfolder = os.path.dirname(file.filepath)
+            ftp.cwd(subfolder)
 
-    return send_from_directory(directory, filename, as_attachment=True)
+        ftp.retrbinary(f"RETR {file.filename}", open(local_path, "wb").write)
+
+        return send_file(local_path, as_attachment=True)
+
+    except Exception as e:
+        abort(500, description=f"Error al descargar: {e}")
+
+    finally:
+        ftp.quit()
+
+        @after_this_request
+        def cleanup(response):
+            try:
+                os.remove(local_path)
+                os.rmdir(local_dir)
+            except:
+                pass
+            return response
 
 @app.route('/delete/<int:file_id>', methods=['POST'])
 @login_required
 def delete_file(file_id):
     file = File.query.get_or_404(file_id)
+
     if file.user_id != current_user.id:
-        flash('Unauthorized access.', 'danger')
+        flash('Acceso no autorizado.', 'danger')
         return redirect(url_for('home'))
 
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    ftp = connect_ftp()
+    user_folder = f"/{current_user.id}"
+    ftp_filepath = f"{user_folder}/{file.filename}"
 
-    print(f"Intentando eliminar: {filepath}") 
+    try:
+        ftp.cwd(user_folder)
+        ftp.delete(file.filename)
+        print(f"Archivo {file.filename} eliminado del FTP.")
+    except Exception as e:
+        flash(f'Error al eliminar el archivo del FTP: {e}', 'danger')
+        ftp.quit()
+        return redirect(url_for('home'))
 
-    if os.path.exists(filepath):
-        try:
-            os.remove(filepath)
-            print("Archivo eliminado del sistema de archivos.")
-        except Exception as e:
-            flash(f'Error eliminando el archivo: {e}', 'danger')
-            return redirect(url_for('list_files'))
-    else:
-        flash('El archivo no existe en el sistema.', 'warning')
+    ftp.quit()
 
     try:
         db.session.delete(file)
@@ -249,7 +304,7 @@ def delete_file(file_id):
         flash(f'Error eliminando de la base de datos: {e}', 'danger')
 
     return redirect(request.referrer or url_for('home'))
-    
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -257,24 +312,49 @@ def load_user(user_id):
 @app.route('/home')
 @login_required
 def home():
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
+    ftp = connect_ftp()
+    user_folder = f"/{current_user.id}"
 
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
+    files_in_folder = []
+    subfolders = []
 
-    files = File.query.filter(
-        File.filepath.like(f"{user_folder}/%"),  
-        ~File.filepath.like(f"{user_folder}/%/%"),  
-        File.user_id == current_user.id
-    ).all()
-    
-    folders = [
-        f for f in os.listdir(user_folder)
-        if os.path.isdir(os.path.join(user_folder, f)) and not f.startswith('.')
-    ]
+    try:
+        ftp.cwd(user_folder)
+    except error_perm:
+        try:
+            ftp.mkd(user_folder)
+            ftp.cwd(user_folder)
+        except Exception as e:
+            ftp.quit()
+            return redirect(url_for('login'))
 
-    return render_template('home.html', files=files, folders=folders, current_folder="")
+    try:
+        entries = []
+        ftp.retrlines('LIST', entries.append)
 
+        for entry in entries:
+            parts = entry.split()
+            name = parts[-1]
+            is_dir = entry.upper().startswith('D') or entry.startswith('drw')
+
+            if is_dir:
+                subfolders.append(name)
+            else:
+                file = File.query.filter_by(user_id=current_user.id, filename=name).first()
+                if file:
+                    files_in_folder.append(file)
+
+    except Exception as e:
+        print(f"Error al llistar contingut del FTP: {e}")
+
+    ftp.quit()
+
+    return render_template(
+        'home.html',
+        files=files_in_folder,
+        folders=subfolders,
+        current_folder=""
+    )
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -363,36 +443,67 @@ def admin_dashboard():
     users = User.query.all()
     return render_template('admin_dashboard.html', users=users)
 
-
 @app.route('/create_folder', methods=['POST'])
 @login_required
 def create_folder():
-    parent_folder = request.form.get('parent_folder', '').strip() or ""  
+    parent_folder = request.form.get('parent_folder', '').strip() or ""
     new_folder = request.form.get('new_folder', '').strip()
 
     if not new_folder:
-        flash("El nombre de la carpeta no puede estar vacío", "danger")
+        print("El nom de la carpeta no pot estar buit")
         return redirect(url_for("home"))
 
-    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
+    user_folder = f"/{current_user.id}"
+    full_path = f"{user_folder}/{parent_folder}/{new_folder}".replace("//", "/").strip("/")
 
-    folder_path = os.path.normpath(os.path.join(user_folder, parent_folder, new_folder))
-
-    if not folder_path.startswith(user_folder):
-        flash("Intento de acceso no autorizado", "danger")
-        return redirect(url_for("home"))
+    ftp = connect_ftp()
 
     try:
-        os.makedirs(folder_path, exist_ok=True)
-        flash(f'Carpeta "{new_folder}" creada en "{parent_folder}"', 'success')
+        ftp.cwd(user_folder)
+
+        if parent_folder:
+            try:
+                ftp.cwd(parent_folder) 
+                print(f"Estem en el directori: {ftp.pwd()}")
+            except error_perm:
+                print(f"El directori '{parent_folder}' no existeix. Creant-lo...")
+                ftp.mkd(parent_folder)
+                ftp.cwd(parent_folder)  
+                print(f"Creat el directori pare: {parent_folder}")
+
+        try:
+            ftp.mkd(new_folder)  
+            print(f'Carpeta "{new_folder}" creada en "{parent_folder}"')
+
+            existing_folder = Folder.query.filter_by(user_id=current_user.id, path=full_path).first()
+
+            if existing_folder:
+                existing_folder.path = full_path
+                db.session.commit()
+                print(f"Carpeta actualizada en la base de datos: {full_path}")
+            else:
+                new_folder_entry = Folder(user_id=current_user.id, path=full_path)
+                db.session.add(new_folder_entry)
+                db.session.commit()
+                print(f"Carpeta nova creada en la base de dades: {full_path}")
+
+        except error_perm as e:
+            if "File exists" not in str(e):  
+                print(f"Error al crear la carpeta: {str(e)}")
+
     except Exception as e:
-        flash(f'Error al crear la carpeta: {str(e)}', 'danger')
+        print(f"Error general: {str(e)}")
+
+    finally:
+        ftp.quit()
 
     return redirect(url_for('list_files'))
 
 @app.route("/move_file", methods=["POST"])
 @login_required
 def move_file():
+    ftp = connect_ftp()
+
     file_id = request.form.get("file_id")
     folder_name = request.form.get("folder_name", "").strip()
 
@@ -405,115 +516,165 @@ def move_file():
         flash("Arxiu no trobat o sense permisos", "danger")
         return redirect(url_for("list_files"))
 
-    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
-    old_path = os.path.normpath(os.path.join(user_folder, file.filepath))
+    old_path = f"/{current_user.id}/{file.filepath}".replace("\\", "/")
 
     current_folder = os.path.dirname(file.filepath)
-    if current_folder:  
-        new_folder = os.path.normpath(os.path.join(user_folder, current_folder, secure_filename(folder_name)))
-    else:  
-        new_folder = os.path.normpath(os.path.join(user_folder, secure_filename(folder_name)))
 
-    new_path = os.path.normpath(os.path.join(new_folder, secure_filename(file.filename)))
+    if current_folder:
+        new_folder_path = f"/{current_user.id}/{current_folder}/{folder_name}".replace("\\", "/")
+        new_filepath = f"{current_folder}/{folder_name}/{file.filename}".replace("\\", "/")
+    else:
+        new_folder_path = f"/{current_user.id}/{folder_name}".replace("\\", "/")
+        new_filepath = f"{folder_name}/{file.filename}".replace("\\", "/")
+
+    new_path = f"{new_folder_path}/{file.filename}"
 
     try:
-        if not os.path.exists(new_folder):
-            os.makedirs(new_folder)
+        try:
+            ftp.mkd(new_folder_path)
+            print(f"Carpeta creada: {new_folder_path}")
+        except Exception as e:
+            print(f"La carpeta ja existeix o error creant carpeta: {e}")
 
-        os.rename(old_path, new_path)
+        print(f"Movent de {old_path} a {new_path}")
+        ftp.rename(old_path, new_path)
 
-        if current_folder:
-            file.filepath = os.path.join(current_folder, folder_name, secure_filename(file.filename))
-        else:
-            file.filepath = os.path.join(folder_name, secure_filename(file.filename))
-
+        file.filepath = new_filepath
         db.session.commit()
         flash("Arxiu mogut exitosament!", "success")
     except Exception as e:
         db.session.rollback()
         flash(f"Error al moure l'arxiu: {e}", "danger")
+    finally:
+        ftp.quit()
 
-    return redirect(url_for("list_folder", folder_name=os.path.join(current_folder, folder_name)))
+    return redirect(url_for("list_folder", folder_name=os.path.dirname(file.filepath)))
+
 
 @app.route('/folder/<path:folder_name>')
 @login_required
 def list_folder(folder_name):
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
-    folder_path = os.path.normpath(os.path.join(user_folder, folder_name))
+    print(f"Accediendo a la carpeta: {folder_name}")
+    ftp = connect_ftp()
 
-    if not folder_path.startswith(user_folder):
+    user_folder = f"/{current_user.id}"
+    folder_path = f"{user_folder}/{folder_name}".strip("/")
+
+    print(f"Intentando acceder al directorio: {folder_path}")
+    try:
+        ftp.cwd(folder_path)
+    except Exception as e:
+        print(f"Error al intentar acceder al directorio: {e}")
+        flash(f"Error al acceder al directorio: {e}", "danger")
+        ftp.quit()
         return redirect(url_for('home'))
 
-    formatted_folder_name = folder_name.replace("/", "\\") 
+    formatted_folder_name = folder_name.replace("/", "\\")
     print(f"Buscando archivos en: {formatted_folder_name}")
 
-    files = File.query.filter(
-        File.user_id == current_user.id,
-        File.filepath.like(f"{formatted_folder_name}\\%"),
-        ~File.filepath.like(f"{formatted_folder_name}\\%\\%")  
-    ).all()
+    files_in_folder = []
+    subfolders = []
 
-    folders = [
-        f for f in os.listdir(folder_path)
-        if os.path.isdir(os.path.join(folder_path, f))
-    ]
+    try:
+        entries = []
+        ftp.retrlines('LIST', entries.append)
+
+        for entry in entries:
+            parts = entry.split()
+            name = parts[-1]
+            is_dir = entry.upper().startswith('D') or entry.startswith('drw')
+
+            if is_dir:
+                subfolders.append(name)
+            else:
+                file = File.query.filter_by(user_id=current_user.id, filename=name).first()
+                if file:
+                    files_in_folder.append(file)
+
+    except Exception as e:
+        print(f"Error al listar archivos: {e}")
+        flash(f"Error al listar archivos: {e}", "danger")
+        ftp.quit()
+        return redirect(url_for('home'))
+
+    ftp.quit()
 
     if folder_name:
-            parent_folder = '/'.join(folder_name.split('/')[:-1])
+        parent_folder = '/'.join(folder_name.split('/')[:-1])
     else:
         parent_folder = ''
 
-    return render_template('home.html', files=files, folders=folders, current_folder=folder_name, parent_folder=parent_folder)
+    return render_template(
+        'home.html',
+        files=files_in_folder,
+        folders=subfolders,
+        current_folder=folder_name,
+        parent_folder=parent_folder
+    )
 
 import shutil
 
 @app.route('/delete_folder', methods=['POST'])
 @login_required
 def delete_folder():
+    from ftplib import error_perm
+
     folder_name = request.form.get("folder_name", "").strip()
     parent_folder = request.form.get("parent_folder", "").strip()
 
     if not folder_name:
-        flash("El nom de la carpeta és necessari", "danger")
         return redirect(url_for("list_files"))
 
-    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(current_user.id))
+    ftp = connect_ftp()
+
     if parent_folder:
-        folder_path = os.path.normpath(os.path.join(user_folder, parent_folder, secure_filename(folder_name)))
+        folder_path = f"/{current_user.id}/{parent_folder}/{folder_name}".replace("\\", "/")
     else:
-        folder_path = os.path.normpath(os.path.join(user_folder, secure_filename(folder_name)))
+        folder_path = f"/{current_user.id}/{folder_name}".replace("\\", "/")
 
-    if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
-        flash("La carpeta no existeix o no es troba", "danger")
-        return redirect(url_for("list_files"))
+    print(f"Intentant eliminar carpeta: {folder_path}")
+
+    def delete_ftp_folder(path):
+        try:
+            ftp.cwd(path)
+            entries = []
+            ftp.retrlines('LIST', entries.append)
+
+            for entry in entries:
+                parts = entry.split()
+                name = parts[-1]
+                item_path = f"{path}/{name}"
+
+                if entry.upper().startswith('D') or entry.startswith('drw'):
+                    delete_ftp_folder(item_path) 
+                else:
+                    ftp.delete(item_path)
+
+            ftp.cwd("..")
+            ftp.rmd(path)
+            print(f"Carpeta eliminada: {path}")
+        except error_perm as e:
+            raise Exception(f"No es pot eliminar la carpeta: {e}")
 
     try:
-        shutil.rmtree(folder_path)
-        print(f"Carpeta eliminada: {folder_path}")
+        delete_ftp_folder(folder_path)
 
-        relative_folder_path = os.path.relpath(folder_path, user_folder)
-        File.query.filter(File.filepath.like(f"{relative_folder_path}%")).delete(synchronize_session=False)
+        relative_path = os.path.join(parent_folder, folder_name).replace("\\", "/")
+        File.query.filter(File.filepath.like(f"{relative_path}%"), File.user_id == current_user.id).delete(synchronize_session=False)
         db.session.commit()
 
         flash("Carpeta eliminada correctament!", "success")
-    except PermissionError as e:
-        db.session.rollback()
-        print(f"Error de permisos al eliminar la carpeta {folder_path}: {e}")
-        flash(f"Error de permisos al eliminar la carpeta: {e}", "danger")
-    except OSError as e:
-        db.session.rollback()
-        print(f"Error al eliminar la carpeta {folder_path}: {e}")
-        flash(f"Error al eliminar la carpeta: {e}", "danger")
     except Exception as e:
         db.session.rollback()
-        print(f"Error inesperat al eliminar la carpeta {folder_path}: {e}")
-        flash(f"Error inesperat: {e}", "danger")
+        flash(f"Error al eliminar la carpeta: {e}", "danger")
+    finally:
+        ftp.quit()
 
     if parent_folder == '':
         return redirect(url_for("list_files"))
     else:
         return redirect(url_for("list_folder", folder_name=parent_folder))
-    
+
 @app.route('/move_to_folder', methods=['POST'])
 @login_required
 def move_to_folder():
@@ -528,6 +689,8 @@ def move_to_folder():
     full_path = full_path.replace("\\", "/")  
 
     return redirect(url_for("list_folder", folder_name=full_path))
+
+from io import BytesIO
 
 @app.route('/share/<int:file_id>', methods=['POST'])
 @login_required
@@ -547,21 +710,30 @@ def share_file(file_id):
     if already_shared:
         return redirect(url_for('home'))
 
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(shared_with_user.id))
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
-
-    original_file_path = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id), file.filepath)
-    copied_file_path = os.path.join(user_folder, os.path.basename(file.filename))
-
+    ftp = connect_ftp()
     try:
-        shutil.copy(original_file_path, copied_file_path)
+        original_path = f"/{current_user.id}/{file.filepath}"
+        dest_path = f"/{shared_with_user.id}/{os.path.basename(file.filename)}"
+
+        bio = BytesIO()
+        ftp.retrbinary(f"RETR {original_path}", bio.write)
+        bio.seek(0)
+
+        try:
+            ftp.cwd(f"/{shared_with_user.id}")
+        except Exception:
+            ftp.mkd(f"/{shared_with_user.id}")
+
+        ftp.storbinary(f"STOR {dest_path}", bio)
 
         shared_file = SharedFile(file_id=file.id, shared_with_id=shared_with_user.id, shared_by_id=current_user.id)
         db.session.add(shared_file)
         db.session.commit()
     except Exception as e:
         db.session.rollback()
+        flash(f"Error compartint arxiu: {e}", "danger")
+    finally:
+        ftp.quit()
 
     return redirect(request.referrer or url_for('home'))
 
@@ -572,27 +744,51 @@ def shared_files():
     
     return render_template('shared_files.html', shared_files=shared_files)
 
+from flask import send_file
+
 @app.route('/download_shared_file/<int:file_id>')
 @login_required
 def download_shared_file(file_id):
     shared_file = SharedFile.query.get_or_404(file_id)
 
     if shared_file.shared_with_id != current_user.id:
-        abort(403)  
+        abort(403) 
 
     shared_file_record = File.query.get_or_404(shared_file.file_id)
+    filename = os.path.basename(shared_file_record.filename)
 
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
-    file_path = os.path.join(user_folder, os.path.basename(shared_file_record.filename))  # Usa la copia en la carpeta del usuario
+    ftp = connect_ftp()
+    try:
+        shared_user_folder = f"/{current_user.id}"
+        file_path = f"{shared_user_folder}/{filename}"
 
-    if not os.path.exists(file_path):
+        bio = BytesIO()
+        ftp.retrbinary(f"RETR {file_path}", bio.write)
+        bio.seek(0)
+
+        return send_file(
+            bio,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/octet-stream'
+        )
+    except Exception as e:
+        print(f"Error al descargar el archivo compartido: {e}")
         abort(404)
-
-    return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), as_attachment=True)
-
+    finally:
+        ftp.quit()
+    
 @app.route('/')
 def ruta():
     return redirect(url_for("web"))
+
+from ftplib import FTP
+
+def connect_ftp():
+    ftp = FTP()
+    ftp.connect('192.168.1.49', 21) 
+    ftp.login('gerard', 'educem123')  
+    return ftp
 
 from app import app, db
 with app.app_context():
