@@ -777,7 +777,6 @@ def download_shared_file(file_id):
         abort(404)
     finally:
         ftp.quit()
-        
     
 @app.route('/')
 def ruta():
