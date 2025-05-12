@@ -2,5 +2,4 @@
 
 chmod +x frp/frps
 frp/frps -c frp/frps.ini &
-
-gunicorn app:app
+gunicorn --timeout 60 app:app
