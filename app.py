@@ -785,13 +785,8 @@ def ruta():
 from ftplib import FTP
 
 def connect_ftp():
-    env = os.getenv('ENV', 'local')
-    if env == 'render':
-        host = 'sistema-web-0579.onrender.com'
-        port = 2121
-    else:
-        host = '192.168.1.49'
-        port = 21
+    host = '192.168.1.49'
+    port = 21
 
     ftp = FTP()
     ftp.connect(host, port)
