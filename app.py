@@ -14,6 +14,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, EqualTo
+from cryptography.fernet import Fernet
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sistema_web.db'
@@ -785,13 +786,8 @@ def ruta():
 from ftplib import FTP
 
 def connect_ftp():
-    env = os.getenv('ENV', 'local')
-    if env == 'render':
-        host = 'sistema-web-0579.onrender.com'
-        port = 2121
-    else:
-        host = '192.168.1.49'
-        port = 21
+    host = '192.168.53.5'
+    port = 21
 
     ftp = FTP()
     ftp.connect(host, port)
